@@ -8,5 +8,12 @@
 #ifndef Header_h
 #define Header_h
 
+class UNDerict_Graph{
+public：
+Private：
+
+    
+    
+}
 
 #endif /* Header_h */

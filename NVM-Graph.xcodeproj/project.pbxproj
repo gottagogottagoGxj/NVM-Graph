@@ -25,7 +25,7 @@
 /* Begin PBXFileReference section */
 		1D86CD51254058C700E3ADC7 /* NVM-Graph */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = "NVM-Graph"; sourceTree = BUILT_PRODUCTS_DIR; };
 		1D86CD54254058C700E3ADC7 /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
-		1D86CD5C25405CC500E3ADC7 /* Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Header.h; sourceTree = "<group>"; };
+		1D86CD5C25405CC500E3ADC7 /* UNDrict_Graph.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = UNDrict_Graph.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -59,7 +59,7 @@
 			isa = PBXGroup;
 			children = (
 				1D86CD54254058C700E3ADC7 /* main.cpp */,
-				1D86CD5C25405CC500E3ADC7 /* Header.h */,
+				1D86CD5C25405CC500E3ADC7 /* UNDrict_Graph.h */,
 			);
 			path = "NVM-Graph";
 			sourceTree = "<group>";
