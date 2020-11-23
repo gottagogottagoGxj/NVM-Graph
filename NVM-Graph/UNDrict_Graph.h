@@ -8,12 +8,11 @@
 #ifndef Header_h
 #define Header_h
 
+#include"hashtable.h"
+#include"Arena.h"
 class UNDerict_Graph{
-public：
-Private：
-
     
     
-}
+};
 
 #endif /* Header_h */
