@@ -26,6 +26,8 @@ public:
     bool Save(const int* IntV, const uint& length){return PutBf(IntV, sizeof(int)*length); }
     bool Save(const char* ChV,const uint& length){return PutBf(ChV,length);}
     bool Save(const uint64_t& UInt64){return PutBf(&UInt64, sizeof(uint64_t));}
+    bool Save(const int64_t& Int64){return PutBf(&Int64, sizeof(int64_t));}
+    
 };
 bool MIn::PutBf(const void *_Bf, const uint &_BfL){
     if(BfC+_BfL>BfL) return false;
@@ -57,6 +59,7 @@ public:
         return GetBf(ChV, length);
     }
     bool Load(uint64_t& UInt64){return GetBf(&UInt64, sizeof(uint64_t));}
+    bool Load(int64_t& Int64){return GetBf(&Int64, sizeof(int64_t));}
 };
 bool MOut::GetBf(void *_Bf, const uint &_BfL){
     if(BfC+_BfL>BfL) return false;

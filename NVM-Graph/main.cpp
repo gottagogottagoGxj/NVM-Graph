@@ -11,30 +11,17 @@
 #include<set>
 #include<queue>
 #include<bitset>
-#include"Arena.h"
-#include"hashtable.h"
-#include"MurmurHash.h"
+#include"UNDrict_Graph.h"
 using namespace std;
 
 
 int main(){
-    int num=32;
-    CuckooHash::HashTable hash(num,4);
-    for(int i=1;i<1000;i++){
-        if(!hash.Add(i, i)){
-            cout<<i<<endl;
-            num*=2;
-            while (!hash.ReSize(num)) {
-                num*=2;
-            }
-            cout<<hash.GetBucketNum()<<endl;
-        }
-    }
-    cout<<hash.LoadFactor()<<endl;
-    for(int i=1;i<1000;++i){
-        uint64_t location=0;
-        hash.Find(i, location);
-        cout<<location<<endl;
-    }
+    UNDerict_Graph graph;
+    graph.AddNode(1);
+    graph.AddNode(2, "abcd");
+    graph.AddNode(3, "1234");
+    cout<<graph.GetNode(1)<<endl;
+    cout<<graph.GetNodeData(2)<<endl;
+    cout<<graph.GetNodeData(3)<<endl;
     return 0;
 }
