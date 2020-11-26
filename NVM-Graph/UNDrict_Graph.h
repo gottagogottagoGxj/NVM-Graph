@@ -25,12 +25,12 @@ public:
         int NidVNum;
         int NidV[InOutEidNumDef];
         bool Flag;
-        int64_t PrevNode;
-        int64_t NextNode;
+        uint64_t PrevNode;
+        uint64_t NextNode;
     public:
-        NvmNode(const int nid):Nid(nid),NidVNum(0),PrevNode(-1),NextNode(-1),Flag(true){}
+        NvmNode(const int nid):Nid(nid),NidVNum(0),PrevNode(0),NextNode(0),Flag(true){}
         NvmNode(const int nid,const char* nodedata)
-    :Nid(nid),NidVNum(0),PrevNode(-1),NextNode(-1),Flag(true){
+    :Nid(nid),NidVNum(0),PrevNode(0),NextNode(0),Flag(true){
         size_t length=strlen(nodedata);
         memcpy(Data,nodedata,length);
         Data[length]='\0';
@@ -76,7 +76,7 @@ public:
             }
             return false;
         }
-        bool IsINNid(const int& nid)const{return IsNbrNid(nid);}
+        bool IsInNid(const int& nid)const{return IsNbrNid(nid);}
         bool IsOutNid(const int&nid)const{return IsNbrNid(nid);}
         void SortNidV(){
             int value;
@@ -126,6 +126,43 @@ public:
         }
         bool DeleteInNid(const int& nid){return DeleteNbrNid(nid);}
         bool DeleteOutNid(const int& nid){return DeleteNbrNid(nid);}
+    };
+    class NvmNodeI{
+    private:
+        NvmNode* CurNode;
+        const char* End;
+    public:
+        NvmNodeI():CurNode(NULL),End(NULL){}
+        NvmNodeI(NvmNode* node,char* end):CurNode(node),End(end){}
+        NvmNodeI(const NvmNodeI& nodeI):CurNode(nodeI.CurNode),End(nodeI.End){}
+        NvmNodeI& operator= (const NvmNodeI& nodeI){
+            CurNode=nodeI.CurNode;
+            End=nodeI.End;
+            return *this;
+        }
+        NvmNodeI& operator++(int){
+            char* cur=(char*)CurNode;
+            if(cur>=End) return *this;
+            CurNode++;
+            return *this;
+        }
+        NvmNodeI& operator--(int){CurNode--;return *this;}
+        bool operator<(const NvmNodeI& nodeI)const{return CurNode<nodeI.CurNode;}
+        bool operator==(const NvmNodeI& nodeI)const{return CurNode==nodeI.CurNode;}
+        
+        int GetId()const{return CurNode->GetId();}
+        const char* GetData()const{return CurNode->GetData();}
+        int GetDeg()const{return CurNode->GetDeg();}
+        int GetInDeg()const{return CurNode->GetInDeg();}
+        int GetOutDeg()const{return CurNode->GetOutDeg();}
+        void SortNidV(){CurNode->SortNidV();}
+        int GetNbrNid(const int& nodeN)const{return CurNode->GetNbrNid(nodeN);}
+        int GetInNid(const int& nodeN)const{return CurNode->GetInNid(nodeN);}
+        int GetOutNid(const int& nodeN)const{return CurNode->GetOutNid(nodeN);}
+        bool IsNbrNid(const int& nid)const{return CurNode->IsNbrNid(nid);}
+        bool IsInNid(const int& nid)const{return CurNode->IsInNid(nid);}
+        bool IsOutNid(const int& nid)const{return CurNode->IsOutNid(nid);}
+        
     };
 private:
     CuckooHash::HashTable NodeHash;
