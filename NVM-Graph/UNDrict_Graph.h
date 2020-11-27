@@ -201,18 +201,19 @@ private:
     bool IsNodeNid(const int& nid)const{
         return NodeHash.IsIn(nid);
     }
+    void DeleteNode(const uint64_t& location);
 public:
     UNDerict_Graph(Arena* arena);
     
     static uint GetNodeSize(){return sizeof(NvmNode);}
     
-    
     int AddNode(const int& nid=-1);
     int AddNode(const int& nid=-1,const char* data="");
-    
-    NvmNode* AddExistNode(const int& nid);
-    NvmNode* AddExistNode(const int& nid,const char* data);
-    
+    NvmNode* AddExistNode(const int& nid=0,const uint64_t& prev=0);
+    size_t GetNodeNum()const{return NodeHash.GetValidSlotNum();}
+    void DelNode(const int& nid);
+    void DelNode(const NvmNode& node){DelNode(node.GetId());}
+    int GetMxNid()const{return MxNid;}
    
    
     

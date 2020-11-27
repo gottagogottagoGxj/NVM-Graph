@@ -13,7 +13,10 @@ class Arena{
 public:
     Arena(const uint NodeSize);
     Arena(const uint NodeSize,const size_t MaxSize);
+    Arena(const Arena& arena);
     ~Arena();
+    Arena& operator=(const Arena& arena);
+    
     char* AllocateBytes(size_t bytes);
     char* AllocateNode();
     void RecoverNode();
@@ -38,9 +41,25 @@ Arena::Arena(const uint NodeSize,const size_t MaxSize){
     begin_ptr=static_cast<char*>(malloc(MaxSize));
     curAlloc_ptr=begin_ptr;
 }
+Arena::Arena(const Arena& arena):EveryNodeSize(arena.EveryNodeSize){
+    begin_ptr=static_cast<char*>(malloc(1024));
+    size_t length=arena.curAlloc_ptr-arena.begin_ptr;
+    curAlloc_ptr=begin_ptr+length;
+    memcpy(begin_ptr, arena.begin_ptr,length+1);
+}
 Arena::~Arena(){
     free(begin_ptr);
 }
+
+Arena& Arena:: operator=(const Arena& arena){
+    EveryNodeSize=arena.EveryNodeSize;
+    begin_ptr=static_cast<char*>(malloc(1024));
+    size_t length=arena.curAlloc_ptr-arena.begin_ptr;
+    curAlloc_ptr=begin_ptr+length;
+    memcpy(begin_ptr, arena.begin_ptr,length+1);
+    return *this;
+}
+
 inline char* Arena::AllocateNode(){
     char * old_ptr=curAlloc_ptr;
     curAlloc_ptr+=EveryNodeSize;
