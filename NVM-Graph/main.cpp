@@ -16,12 +16,11 @@ using namespace std;
 
 
 int main(){
-    UNDerict_Graph graph;
+    Arena arena(UNDerict_Graph::GetNodeSize());
+    UNDerict_Graph graph(&arena);
     graph.AddNode(1);
     graph.AddNode(2, "abcd");
     graph.AddNode(3, "1234");
-    cout<<graph.GetNode(1)<<endl;
-    cout<<graph.GetNodeData(2)<<endl;
-    cout<<graph.GetNodeData(3)<<endl;
+    
     return 0;
 }

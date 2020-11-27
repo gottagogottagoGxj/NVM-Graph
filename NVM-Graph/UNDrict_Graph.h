@@ -28,13 +28,13 @@ public:
         uint64_t PrevNode;
         uint64_t NextNode;
     public:
-        NvmNode(const int nid):Nid(nid),NidVNum(0),PrevNode(0),NextNode(0),Flag(true){}
-        NvmNode(const int nid,const char* nodedata)
-    :Nid(nid),NidVNum(0),PrevNode(0),NextNode(0),Flag(true){
+        NvmNode(const int nid):Nid(nid),NidVNum(0),PrevNode(0),NextNode(0),Flag(true),Data("\0"){}
+        NvmNode(const int nid,const char* nodedata):Nid(nid),NidVNum(0),PrevNode(0),NextNode(0),Flag(true){
         size_t length=strlen(nodedata);
         memcpy(Data,nodedata,length);
         Data[length]='\0';
         }
+        NvmNode(const int nid,const uint64_t prev):Nid(nid),NidVNum(0),Data("\0"),Flag(true),PrevNode(prev),NextNode(0){}
         NvmNode(MOut& Out){
             Out.Load(Nid);
             Out.Load(Data,NodeDatalengthDef);
@@ -63,7 +63,14 @@ public:
             In.Save(NextNode);
         }
         int GetId()const{return Nid;}
+        bool GetFlag()const{return Flag;}
+        void SetFlag(const bool& flag){Flag=flag;}
         const char* GetData()const{return Data;}
+        void SetData(const char* data){
+            size_t length=strlen(data);
+            memcpy(Data, data, length);
+            Data[length]='\0';
+        }
         int GetDeg() const{return NidVNum;}
         int GetInDeg()const{return NidVNum;}
         int GetOutDeg()const{return NidVNum;}
@@ -96,6 +103,12 @@ public:
         static void operator delete(void* p, Arena* table){
             table->RecoverNode();
         }
+        static void* operator new(size_t size,char* start){
+            return (void*)start;
+        }
+        static void operator delete(void* p,char* start){}
+        
+        
         
         bool AddNbrNid(const int& nid){
             if(NidVNum<InOutEidNumDef){
@@ -126,6 +139,11 @@ public:
         }
         bool DeleteInNid(const int& nid){return DeleteNbrNid(nid);}
         bool DeleteOutNid(const int& nid){return DeleteNbrNid(nid);}
+        
+        uint64_t GetPrevNodeAddre()const{return PrevNode;}
+        void SetPrevNodeAddre(const uint64_t& location){PrevNode=location;}
+        uint64_t GetNextNodeAddre()const{return NextNode;}
+        void SetNextNodeAddre(const uint64_t& location){NextNode=location;}
     };
     class NvmNodeI{
     private:
@@ -144,9 +162,10 @@ public:
             char* cur=(char*)CurNode;
             if(cur>=End) return *this;
             CurNode++;
+            while((char*)CurNode<End && CurNode->GetPrevNodeAddre()!=0) CurNode++;
             return *this;
         }
-        NvmNodeI& operator--(int){CurNode--;return *this;}
+        NvmNodeI& operator--(int){CurNode--;while(CurNode->GetPrevNodeAddre()!=0) CurNode--;return *this;}
         bool operator<(const NvmNodeI& nodeI)const{return CurNode<nodeI.CurNode;}
         bool operator==(const NvmNodeI& nodeI)const{return CurNode==nodeI.CurNode;}
         
@@ -166,52 +185,39 @@ public:
     };
 private:
     CuckooHash::HashTable NodeHash;
-    Arena NodeTable;
+    Arena* NodeTable;
     NvmNode* HeadNode;
+    int MxNid,EdgeNum;
+    uint64_t FreeNodeLocation;
+    int FreeNodeNum;
+private:
+    NvmNode* GetNodePtr(const uint64_t& location) const{
+        size_t nodeN=location/NodeTable->NodeSize();
+        return HeadNode+nodeN;
+    }
+    uint64_t GetNodeLocation(const NvmNode* node)const{
+        return (char*)node-NodeTable->BeginPtr();
+    }
+    bool IsNodeNid(const int& nid)const{
+        return NodeHash.IsIn(nid);
+    }
 public:
-    UNDerict_Graph():NodeTable(sizeof(NvmNode)),NodeHash(32,4){
-        HeadNode=AddNode(0);
-    }
-    NvmNode* AddNode(const int& nid){
-        NvmNode* node=new(&NodeTable) NvmNode(nid);
-        uint64_t location=(char*)node-NodeTable.BeginPtr();
-        if(!NodeHash.Add(nid, location)){
-            int BucketNum=32;
-            BucketNum*=2;
-            while(!NodeHash.ReSize(BucketNum)) BucketNum*=2;
-        }
-        return node;
-    }
-    NvmNode* AddNode(const int& nid,const char* data){
-        NvmNode* node=new(&NodeTable) NvmNode(nid,data);
-        uint64_t location=(char*)node-NodeTable.BeginPtr();
-        if(!NodeHash.Add(nid, location)){
-            int BucketNum=32;
-            BucketNum*=2;
-            while(!NodeHash.ReSize(BucketNum)) BucketNum*=2;
-        }
-        return node;
-    }
-   
-   
-    size_t GetCurNodeNum()const{
-        return NodeTable.GetCurAllocateNodeNum();
-    }
+    UNDerict_Graph(Arena* arena);
     
-    int GetNode(const int& nid)const{
-        uint64_t location;
-        if(NodeHash.Find(nid, location)){
-            return (HeadNode+(location/NodeTable.NodeSize()))->GetId();
-        }
-        return -1;
-    }
-    const char* GetNodeData(const int& nid) const{
-        uint64_t location;
-        if(NodeHash.Find(nid, location)){
-            return (HeadNode+(location/NodeTable.NodeSize()))->GetData();
-        }
-        return "\0";
-    }
+    static uint GetNodeSize(){return sizeof(NvmNode);}
+    
+    
+    int AddNode(const int& nid=-1);
+    int AddNode(const int& nid=-1,const char* data="");
+    
+    NvmNode* AddExistNode(const int& nid);
+    NvmNode* AddExistNode(const int& nid,const char* data);
+    
+   
+   
+    
+    
+    
     
     
 };

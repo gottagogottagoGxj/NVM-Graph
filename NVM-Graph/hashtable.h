@@ -69,6 +69,7 @@ public:
     
     bool Add(const int& key,const uint64_t& location);
     bool Find(const int& key,uint64_t& loaction) const;
+    bool IsIn(const int& key)const;
     bool Delete(const int& key);
     bool ReSize(const size_t& NewBucketNum);
     
@@ -172,6 +173,17 @@ bool HashTable::Find(const int& key,uint64_t& location)const{
     i2=AltIndex(i1, tag);
     return table->FindKeyInBucket(i1, i2, key, location);
 }
+bool HashTable::IsIn(const int &key)const{
+    if(victim.IsUse && victim.TempSlot.key==key){
+        return true;
+    }
+    size_t i1,i2;
+    uint32_t tag;
+    GenerateIndexTagHash(key, i1, tag);
+    i2=AltIndex(i1, tag);
+    return table->IsKeyInBucket(i1, i2, key);
+}
+
 
 bool HashTable::Delete(const int &key){
     if(victim.IsUse && victim.TempSlot.key==key){

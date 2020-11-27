@@ -164,6 +164,22 @@ public:
         }
         return false;
     }
+    bool IsKeyInBucket(const size_t i1,const size_t i2, const int& key) const{
+        int curkey=0;
+        for(int j=0;j<SlotPerBucket;++j){
+            curkey=Readkey(i1, j);
+            if(curkey==key){
+                return true;
+            }
+            if(i2!=i1){
+                curkey=Readkey(i2, j);
+                if(curkey==key){
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
     
     bool DeleteSlotFromBucket(const size_t i, const int& key){
         for(int j=0;j<SlotPerBucket;++j){
