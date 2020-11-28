@@ -8,6 +8,8 @@
 #ifndef basetable_h
 #define basetable_h
 
+
+#include<assert.h>
 #include"InOut.h"
 
 namespace CuckooHash {
@@ -106,7 +108,13 @@ public:
     BaseTable(const size_t num,const size_t slot):BucketNum(num),SlotPerBucket(slot){
         bucket=new Pair[BucketNum*SlotPerBucket];
     }
+    BaseTable(const size_t num,const size_t slot,const Pair* src):BucketNum(num),SlotPerBucket(slot){
+        bucket=new Pair[BucketNum*SlotPerBucket];
+        memcpy(bucket, src, BucketNum*SlotPerBucket*sizeof(Pair));
+    }
     ~BaseTable(){delete[] bucket;}
+    const Pair* GetBucketPtr()const{return bucket;}
+    
     size_t GetSlotSize() const{return sizeof(Pair);}
     size_t GetBucketSize() const {return GetSlotSize()*SlotPerBucket;}
     size_t GetSize() const{return GetBucketSize()*BucketNum;}

@@ -7,6 +7,8 @@
 
 #ifndef InOut_h
 #define InOut_h
+typedef unsigned int uint;
+
 // 将数据存入内存或NVM
 class MIn{
 private:

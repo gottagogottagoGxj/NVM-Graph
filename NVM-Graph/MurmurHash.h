@@ -7,7 +7,7 @@
 
 #ifndef MurMurHash_h
 #define MurMurHash_h
-
+#include <stdint.h>
 #ifndef FALLTHROUGH_INTENDED
 #define FALLTHROUGH_INTENDED do { } while (0)
 #endif

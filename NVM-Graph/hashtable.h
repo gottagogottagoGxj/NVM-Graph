@@ -61,11 +61,22 @@ private:
     }
     
 public:
-    HashTable(const size_t& bn,const size_t& sn):
-    BucketNum(bn),slot_per_bucket(sn),ValidSlotNum(0),victim(){
-        table=new BaseTable(bn,slot_per_bucket);
+    HashTable(const size_t& bn,const size_t& sn):BucketNum(bn),slot_per_bucket(sn),ValidSlotNum(0),victim(){
+        table=new BaseTable(BucketNum,slot_per_bucket);
+    }
+    HashTable(const HashTable& hashtable):BucketNum(hashtable.BucketNum),slot_per_bucket(hashtable.slot_per_bucket),ValidSlotNum(hashtable.ValidSlotNum),victim(hashtable.victim){
+        table=new BaseTable(BucketNum,slot_per_bucket,hashtable.table->GetBucketPtr());
     }
     ~HashTable(){delete table;}
+    
+    HashTable& operator=(const HashTable& hashtable){
+        BucketNum=hashtable.BucketNum;
+        slot_per_bucket=hashtable.slot_per_bucket;
+        ValidSlotNum=hashtable.ValidSlotNum;
+        victim=hashtable.victim;
+        table=new BaseTable(BucketNum,slot_per_bucket,hashtable.table->GetBucketPtr());
+        return *this;
+    }
     
     bool Add(const int& key,const uint64_t& location);
     bool Find(const int& key,uint64_t& loaction) const;
