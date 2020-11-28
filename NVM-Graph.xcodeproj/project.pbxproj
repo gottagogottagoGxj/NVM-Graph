@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		1D627CFC257277C50028B408 /* UNDerict_Graph.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1D627CFB257277C50028B408 /* UNDerict_Graph.cpp */; };
 		1D86CD55254058C700E3ADC7 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1D86CD54254058C700E3ADC7 /* main.cpp */; };
 /* End PBXBuildFile section */
 
@@ -23,10 +24,11 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		1D627CFB257277C50028B408 /* UNDerict_Graph.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = UNDerict_Graph.cpp; sourceTree = "<group>"; };
 		1D8262B72563DB1300F7953C /* Arena.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Arena.h; sourceTree = "<group>"; };
 		1D86CD51254058C700E3ADC7 /* NVM-Graph */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = "NVM-Graph"; sourceTree = BUILT_PRODUCTS_DIR; };
 		1D86CD54254058C700E3ADC7 /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
-		1D86CD5C25405CC500E3ADC7 /* UNDrict_Graph.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = UNDrict_Graph.h; sourceTree = "<group>"; };
+		1D86CD5C25405CC500E3ADC7 /* UNDerict_Graph.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = UNDerict_Graph.h; sourceTree = "<group>"; };
 		1DB615E92566AA0C00FB679E /* InOut.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = InOut.h; sourceTree = "<group>"; };
 		1DB615EB2567634B00FB679E /* MurmurHash.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MurmurHash.h; sourceTree = "<group>"; };
 		1DB615ED2567DF1B00FB679E /* basetable.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = basetable.h; sourceTree = "<group>"; };
@@ -64,9 +66,10 @@
 			isa = PBXGroup;
 			children = (
 				1D86CD54254058C700E3ADC7 /* main.cpp */,
+				1D627CFB257277C50028B408 /* UNDerict_Graph.cpp */,
 				1DB615ED2567DF1B00FB679E /* basetable.h */,
 				1DB615EF2568037000FB679E /* hashtable.h */,
-				1D86CD5C25405CC500E3ADC7 /* UNDrict_Graph.h */,
+				1D86CD5C25405CC500E3ADC7 /* UNDerict_Graph.h */,
 				1D8262B72563DB1300F7953C /* Arena.h */,
 				1DB615EB2567634B00FB679E /* MurmurHash.h */,
 				1DB615E92566AA0C00FB679E /* InOut.h */,
@@ -130,6 +133,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				1D627CFC257277C50028B408 /* UNDerict_Graph.cpp in Sources */,
 				1D86CD55254058C700E3ADC7 /* main.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

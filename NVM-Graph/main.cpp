@@ -11,7 +11,7 @@
 #include<set>
 #include<queue>
 #include<bitset>
-#include "UNDrict_Graph.h"
+#include "UNDerict_Graph.cpp"
 using namespace std;
 
 
@@ -22,9 +22,30 @@ int main(){
     graph.AddNode(2, "abcdefdghijklmnopqrstuvwxyzabcdefghijklmnopqresidhfgdbsjs");
     graph.AddNode(3, "1234");
     cout<<graph.GetNodeNum()<<endl;
-    UNDerict_Graph::NvmNodeI iter=graph.GetNI(3);
-    cout<<iter.GetData()<<endl;
-    cout<<iter.GetDeg()<<endl;
+    //graph.DelNode(1);
+    UNDerict_Graph::NvmNodeI iter=graph.HeadNI();
+    iter++;
+    while(!iter.IsEnd()){
+        cout<<iter.GetId()<<endl;
+        iter++;
+    }
+    graph.DelNode(1);
+    graph.AddNode(4,"gxj");
+    iter=graph.HeadNI();
+    iter++;
+    while(!iter.IsEnd()){
+        cout<<iter.GetId()<<endl;
+        iter++;
+    }
+   
+    graph.AddExistNode(2);
+    graph.AddNode(5);
+    iter=graph.HeadNI();
+    iter++;
+    while(!iter.IsEnd()){
+        cout<<iter.GetData()<<endl;
+        iter++;
+    }
     
     return 0;
 }

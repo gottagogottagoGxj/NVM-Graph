@@ -289,21 +289,22 @@ private:
     uint64_t GetNodeLocation(const NvmNode* node)const{
         return (char*)node-NodeTable->BeginPtr();
     }
-    bool IsNodeNid(const int& nid)const{
-        return NodeHash.IsIn(nid);
-    }
     void DeleteNode(const uint64_t& location);
+    NvmNode* AddExistNode(const int& nid=0,const int& flag=0);
+    void AddEdgeToNode(const uint64_t &location, const int &edgenid);
+    void DelEdgeOfNode(const uint64_t &location, const int &edgenid);
 public:
     UNDerict_Graph(Arena* arena);
     UNDerict_Graph(const UNDerict_Graph& graph);
     ~UNDerict_Graph();
-    
     UNDerict_Graph& operator=(const UNDerict_Graph& graph);
     
     static uint GetNodeSize(){return sizeof(NvmNode);}
     
+    bool IsNodeNid(const int& nid)const{
+        return NodeHash.IsIn(nid);
+    }
     int AddNode(const int& nid=-1,const char* data="");
-    NvmNode* AddExistNode(const int& nid=0,const int& flag=0);
     size_t GetNodeNum()const{return NodeHash.GetValidSlotNum();}
     void DelNode(const int& nid);
     void DelNode(const NvmNode& node){DelNode(node.GetId());}
@@ -318,8 +319,17 @@ public:
         else curnode=NULL;
         return NvmNodeI(HeadNode, curnode, NodeTable->EndPtr());
     }
-   
     
+    bool IsEdge(const int& SrcNid,const int& DstNid)const{
+        if(!IsNodeNid(SrcNid) || !IsNodeNid(DstNid)) return false;
+        return GetNI(SrcNid).IsNbrNid(DstNid);
+    }
+    //插入边，返回-1代表节点不存在，返回0代表边已存在，返回1代表插入成功
+    int AddEdge(const int& SrcNid,const int& DstNid);
+    //插入边，返回0代表边已存在，返回1代表插入成功，若节点不存在，先新建节点
+    int AddEdge2(const int& SrcNid,const int& DstNid);
+    void DelEdge(const int& SrcNid,const int& DstNid);
+    int GetEdgeNum()const{return EdgeNum;}
     
     
     
@@ -328,103 +338,7 @@ public:
 
 
 
-UNDerict_Graph::UNDerict_Graph(Arena* arena): NodeTable(arena),NodeHash(32,4),MxNid(1),EdgeNum(0),FreeNodeLocation(0),FreeNodeNum(0){
-    if(NodeTable->EndPtr()==NodeTable->BeginPtr()){
-        HeadNode=AddExistNode();
-    }
-    else{
-        HeadNode=new(NodeTable->HeadPtr()) NvmNode(0,0);
-        NvmNode* temp=HeadNode+1;
-        const char* end=NodeTable->EndPtr();
-        const char* begin=NodeTable->BeginPtr();
-        while((char*)temp<end){
-            if(temp->GetFlag()==-1){
-                temp->SetNextNodeAddre(FreeNodeLocation);
-                FreeNodeLocation=(char*)temp-begin;
-                FreeNodeNum++;
-            }
-            else {
-                int nid=temp->GetId();
-                if(temp->GetFlag()==1){
-                    uint64_t location=(char*)temp-begin;
-                    NodeHash.Add(nid,location);
-                    MxNid=MxNid>(nid+1)?MxNid:(nid+1);
-                }
-                int deg=temp->GetDeg();
-                for(int i=0;i<deg;++i){
-                    if(temp->GetNbrNid(i)>=nid) EdgeNum++;
-                }
-            }
-            temp++;
-        }
-    }
-}
-//有问题
-UNDerict_Graph::UNDerict_Graph(const UNDerict_Graph& graph):NodeTable(graph.NodeTable),NodeHash(graph.NodeHash),MxNid(graph.MxNid),EdgeNum(graph.EdgeNum),FreeNodeLocation(graph.FreeNodeLocation),FreeNodeNum(graph.FreeNodeNum){}
-UNDerict_Graph::~UNDerict_Graph(){}
 
-int UNDerict_Graph::AddNode(const int& nid,const char* data){
-    int newnid;
-    if(nid==-1){newnid=MxNid;MxNid++;}
-    else{
-        if(IsNodeNid(nid)){return -1;}
-        else{
-            newnid=nid;
-            MxNid=MxNid>(nid+1)?MxNid:(nid+1);
-        }
-    }
-    uint64_t address;
-    if(FreeNodeNum>0){
-        uint64_t location=FreeNodeLocation;
-        FreeNodeLocation=GetNodePtr(FreeNodeLocation)->GetNextNodeAddre();
-        char* start=NodeTable->HeadPtr()+location;
-        NvmNode* newnode=new(start) NvmNode(newnid,data);
-        FreeNodeNum--;
-        address=GetNodeLocation(newnode);
-    }
-    else{
-        NvmNode * newnode=new(NodeTable) NvmNode(newnid,data);
-        address=GetNodeLocation(newnode);
-    }
-    NodeHash.Add(newnid,address);
-    return newnid;
-}
-
-UNDerict_Graph::NvmNode* UNDerict_Graph::AddExistNode(const int& nid,const int& flag){
-    NvmNode* newnode;
-    if(FreeNodeNum>0){
-        uint64_t location=FreeNodeLocation;
-        FreeNodeLocation=GetNodePtr(FreeNodeLocation)->GetNextNodeAddre();
-        char* start=NodeTable->HeadPtr()+location;
-        newnode=new(start) NvmNode(nid,flag);
-        FreeNodeNum--;
-    }
-    else{
-        newnode=new(NodeTable) NvmNode(nid,flag);
-    }
-    return newnode;
-}
-
-void UNDerict_Graph::DeleteNode(const uint64_t &location){
-    NvmNode* node=GetNodePtr(location);
-    node->SetNextNodeAddre(FreeNodeLocation);
-    node->SetFlag(-1);
-    FreeNodeLocation=location;
-    FreeNodeNum++;
-}
-void UNDerict_Graph::DelNode(const int &nid){
-    uint64_t location;
-    if(NodeHash.Find(nid,location)){
-        NvmNode* node=GetNodePtr(location);
-        while(node->GetNextNodeAddre()!=0){
-            uint64_t temp=node->GetNextNodeAddre();
-            DeleteNode(location);
-            location=temp;
-            node=GetNodePtr(location);
-        }
-        DeleteNode(location);
-    }
-}
 
 
 
