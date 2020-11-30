@@ -12,6 +12,7 @@
 #include<queue>
 #include<bitset>
 #include "UNDerict_Graph.h"
+#include "Derict_Graph.h"
 using namespace std;
 
 
