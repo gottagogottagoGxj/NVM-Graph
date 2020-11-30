@@ -7,9 +7,7 @@
 
 #ifndef Header_h
 #define Header_h
-
 #include<string.h>
-
 
 #include"hashtable.h"
 #include"Arena.h"
@@ -297,7 +295,7 @@ public:
                     CurNode++;
                     while(!CurNode.IsEnd() && CurNode.GetOutDeg()==0){CurNode++;}
                 }
-            }while(!CurNode.IsEnd() && GetSrcNid()<GetDstNid());
+            }while(!CurNode.IsEnd() && GetSrcNid()>GetDstNid());
             return *this;
         }
         bool operator<(const EdgeI& edgei)const{
@@ -331,7 +329,6 @@ private:
 public:
     UNDerict_Graph(Arena* arena);
     UNDerict_Graph(const UNDerict_Graph& graph);
-    ~UNDerict_Graph();
     UNDerict_Graph& operator=(const UNDerict_Graph& graph);
     
     static uint GetNodeSize(){return sizeof(NvmNode);}
@@ -344,7 +341,7 @@ public:
     void DelNode(const int& nid);
     void DelNode(const NvmNode& node){DelNode(node.GetId());}
     int GetMxNid()const{return MxNid;}
-    NvmNodeI HeadNI()const{return NvmNodeI(HeadNode,HeadNode,NodeTable->EndPtr());}
+    NvmNodeI BegNI()const{return NvmNodeI(HeadNode,HeadNode,NodeTable->EndPtr())++;}
     NvmNodeI GetNI(const int& nid)const{
         NvmNode* curnode;
         uint64_t location;
@@ -370,13 +367,13 @@ public:
     void DelEdge(const int& SrcNid,const int& DstNid);
     int GetEdgeNum()const{return EdgeNum;}
     EdgeI BegEI()const{
-        NvmNodeI beginNI=HeadNI();
-        beginNI++;
+        NvmNodeI beginNI=BegNI();
         EdgeI beginEI=EdgeI(beginNI,1);
         if(GetNodeNum()!=0 && !beginEI.IsEnd() && (beginNI.GetOutDeg()==0 || beginEI.GetSrcNid()>beginEI.GetDstNid())){beginEI++;}
         return  beginEI;
     }
     EdgeI GetEI(const NvmNodeI& nodeI,const int& edge)const{return EdgeI(nodeI,edge);}
+    EdgeI EndEI()const{return EdgeI(EndNI(),1);}
 };
 
 
@@ -414,7 +411,7 @@ UNDerict_Graph::UNDerict_Graph(Arena* arena): NodeTable(arena),NodeHash(32,4),Mx
 }
 //有问题
 UNDerict_Graph::UNDerict_Graph(const UNDerict_Graph& graph):NodeTable(graph.NodeTable),NodeHash(graph.NodeHash),MxNid(graph.MxNid),EdgeNum(graph.EdgeNum),FreeNodeLocation(graph.FreeNodeLocation),FreeNodeNum(graph.FreeNodeNum){}
-UNDerict_Graph::~UNDerict_Graph(){}
+
 
 int UNDerict_Graph::AddNode(const int& nid,const char* data){
     int newnid;
@@ -499,7 +496,9 @@ int UNDerict_Graph::AddEdge(const int &SrcNid, const int &DstNid){
     if(!NodeHash.Find(SrcNid, location1) || !NodeHash.Find(DstNid, location2)) {return -1;}
     if(IsEdge(SrcNid, DstNid)) {return 0;}
     AddEdgeToNode(location1, DstNid);
-    AddEdgeToNode(location2, SrcNid);
+    if(SrcNid!=DstNid){
+        AddEdgeToNode(location2, SrcNid);
+    }
     EdgeNum++;
     return 1;
 }
@@ -510,7 +509,9 @@ int UNDerict_Graph::AddEdge2(const int &SrcNid, const int &DstNid){
     if(!NodeHash.Find(SrcNid, location1)){AddNode(SrcNid);}
     if(!NodeHash.Find(DstNid, location2)){AddNode(DstNid);}
     AddEdgeToNode(location1, DstNid);
-    AddEdgeToNode(location2, SrcNid);
+    if(SrcNid!=DstNid){
+        AddEdgeToNode(location2, SrcNid);
+    }
     EdgeNum++;
     return 1;
 }
@@ -519,7 +520,7 @@ void UNDerict_Graph::DelEdgeOfNode(const uint64_t &location, const int &edgenid)
     uint64_t temp=location;
     NvmNode* curnode=GetNodePtr(temp);
     NvmNode* prevnode=curnode;
-    if((!curnode->DeleteNbrNid(edgenid))&&curnode->GetNextNodeAddre()!=0){
+    while((!curnode->DeleteNbrNid(edgenid))&&curnode->GetNextNodeAddre()!=0){
         prevnode=curnode;
         temp=curnode->GetNextNodeAddre();
         curnode=GetNodePtr(temp);
@@ -535,7 +536,9 @@ void UNDerict_Graph::DelEdge(const int &SrcNid, const int &DstNid){
     NodeHash.Find(SrcNid, location1);
     NodeHash.Find(DstNid, location2);
     DelEdgeOfNode(location1, DstNid);
-    DelEdgeOfNode(location2, SrcNid);
+    if(SrcNid!=DstNid){
+        DelEdgeOfNode(location2, SrcNid);
+    }
     EdgeNum--;
 }
 

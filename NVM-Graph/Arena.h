@@ -37,7 +37,7 @@ Arena::Arena(const uint NodeSize): EveryNodeSize(NodeSize){
     begin_ptr=static_cast<char*>(malloc(1024));
     curAlloc_ptr=begin_ptr;
 }
-Arena::Arena(const uint NodeSize,const size_t MaxSize){
+Arena::Arena(const uint NodeSize,const size_t MaxSize):EveryNodeSize(NodeSize){
     begin_ptr=static_cast<char*>(malloc(MaxSize));
     curAlloc_ptr=begin_ptr;
 }
