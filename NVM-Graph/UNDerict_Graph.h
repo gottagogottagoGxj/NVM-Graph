@@ -273,6 +273,41 @@ public:
         bool IsBegin()const{return CurNode==Begin;}
         bool IsEnd()const{return (char*)CurNode==End;}
     };
+    class EdgeI{
+    private:
+        NvmNodeI CurNode;
+        int CurEdge;
+    public:
+        EdgeI():CurNode(),CurEdge(0){}
+        EdgeI(const NvmNodeI& node,const int& edge):CurNode(node),CurEdge(edge){}
+        EdgeI(const EdgeI& edgei):CurNode(edgei.CurNode),CurEdge(edgei.CurEdge){}
+        EdgeI& operator=(const EdgeI& edgei){
+            if(this!=&edgei){
+                CurNode=edgei.CurNode;
+                CurEdge=edgei.CurEdge;
+            }
+            return *this;
+        }
+        bool operator==(const EdgeI& edgei) const{return CurNode==edgei.CurNode && CurEdge==edgei.CurEdge;}
+        EdgeI& operator++(int){
+            do{
+                CurEdge++;
+                if(CurEdge>CurNode.GetOutDeg()){
+                    CurEdge=1;
+                    CurNode++;
+                    while(!CurNode.IsEnd() && CurNode.GetOutDeg()==0){CurNode++;}
+                }
+            }while(!CurNode.IsEnd() && GetSrcNid()<GetDstNid());
+            return *this;
+        }
+        bool operator<(const EdgeI& edgei)const{
+            return CurNode<edgei.CurNode||(CurNode==edgei.CurNode && CurEdge<edgei.CurEdge);
+        }
+        int GetSrcNid()const{return CurNode.GetId();}
+        int GetDstNid()const{return CurNode.GetOutNid(CurEdge);}
+        bool IsEmpty()const{return CurNode.IsEmpty();}
+        bool IsEnd()const{return CurNode.IsEnd();}
+    };
 private:
     Arena* NodeTable;
     CuckooHash::HashTable NodeHash;
@@ -319,6 +354,10 @@ public:
         else curnode=NULL;
         return NvmNodeI(HeadNode, curnode, NodeTable->EndPtr());
     }
+    NvmNodeI EndNI()const{
+        NvmNode* curnode=GetNodePtr(NodeTable->BeginPtr()-NodeTable->EndPtr());
+        return NvmNodeI(HeadNode, curnode, NodeTable->EndPtr());
+    }
     
     bool IsEdge(const int& SrcNid,const int& DstNid)const{
         if(!IsNodeNid(SrcNid) || !IsNodeNid(DstNid)) return false;
@@ -330,14 +369,175 @@ public:
     int AddEdge2(const int& SrcNid,const int& DstNid);
     void DelEdge(const int& SrcNid,const int& DstNid);
     int GetEdgeNum()const{return EdgeNum;}
-    
-    
-    
-    
+    EdgeI BegEI()const{
+        NvmNodeI beginNI=HeadNI();
+        beginNI++;
+        EdgeI beginEI=EdgeI(beginNI,1);
+        if(GetNodeNum()!=0 && !beginEI.IsEnd() && (beginNI.GetOutDeg()==0 || beginEI.GetSrcNid()>beginEI.GetDstNid())){beginEI++;}
+        return  beginEI;
+    }
+    EdgeI GetEI(const NvmNodeI& nodeI,const int& edge)const{return EdgeI(nodeI,edge);}
 };
 
 
 
+UNDerict_Graph::UNDerict_Graph(Arena* arena): NodeTable(arena),NodeHash(32,4),MxNid(1),EdgeNum(0),FreeNodeLocation(0),FreeNodeNum(0){
+    if(NodeTable->EndPtr()==NodeTable->BeginPtr()){
+        HeadNode=AddExistNode();
+    }
+    else{
+        HeadNode=new(NodeTable->HeadPtr()) NvmNode(0,0);
+        NvmNode* temp=HeadNode+1;
+        const char* end=NodeTable->EndPtr();
+        const char* begin=NodeTable->BeginPtr();
+        while((char*)temp<end){
+            if(temp->GetFlag()==-1){
+                temp->SetNextNodeAddre(FreeNodeLocation);
+                FreeNodeLocation=(char*)temp-begin;
+                FreeNodeNum++;
+            }
+            else {
+                int nid=temp->GetId();
+                if(temp->GetFlag()==1){
+                    uint64_t location=(char*)temp-begin;
+                    NodeHash.Add(nid,location);
+                    MxNid=MxNid>(nid+1)?MxNid:(nid+1);
+                }
+                int deg=temp->GetDeg();
+                for(int i=0;i<deg;++i){
+                    if(temp->GetNbrNid(i)>=nid) EdgeNum++;
+                }
+            }
+            temp++;
+        }
+    }
+}
+//有问题
+UNDerict_Graph::UNDerict_Graph(const UNDerict_Graph& graph):NodeTable(graph.NodeTable),NodeHash(graph.NodeHash),MxNid(graph.MxNid),EdgeNum(graph.EdgeNum),FreeNodeLocation(graph.FreeNodeLocation),FreeNodeNum(graph.FreeNodeNum){}
+UNDerict_Graph::~UNDerict_Graph(){}
+
+int UNDerict_Graph::AddNode(const int& nid,const char* data){
+    int newnid;
+    if(nid==-1){newnid=MxNid;MxNid++;}
+    else{
+        if(IsNodeNid(nid)){return -1;}
+        else{
+            newnid=nid;
+            MxNid=MxNid>(nid+1)?MxNid:(nid+1);
+        }
+    }
+    uint64_t address;
+    if(FreeNodeNum>0){
+        uint64_t location=FreeNodeLocation;
+        FreeNodeLocation=GetNodePtr(FreeNodeLocation)->GetNextNodeAddre();
+        char* start=NodeTable->HeadPtr()+location;
+        NvmNode* newnode=new(start) NvmNode(newnid,data);
+        FreeNodeNum--;
+        address=GetNodeLocation(newnode);
+    }
+    else{
+        NvmNode * newnode=new(NodeTable) NvmNode(newnid,data);
+        address=GetNodeLocation(newnode);
+    }
+    NodeHash.Add(newnid,address);
+    return newnid;
+}
+
+UNDerict_Graph::NvmNode* UNDerict_Graph::AddExistNode(const int& nid,const int& flag){
+    NvmNode* newnode;
+    if(FreeNodeNum>0){
+        uint64_t location=FreeNodeLocation;
+        FreeNodeLocation=GetNodePtr(FreeNodeLocation)->GetNextNodeAddre();
+        char* start=NodeTable->HeadPtr()+location;
+        newnode=new(start) NvmNode(nid,flag);
+        FreeNodeNum--;
+    }
+    else{
+        newnode=new(NodeTable) NvmNode(nid,flag);
+    }
+    return newnode;
+}
+
+void UNDerict_Graph::DeleteNode(const uint64_t &location){
+    NvmNode* node=GetNodePtr(location);
+    node->SetNextNodeAddre(FreeNodeLocation);
+    node->SetFlag(-1);
+    FreeNodeLocation=location;
+    FreeNodeNum++;
+}
+void UNDerict_Graph::DelNode(const int &nid){
+    uint64_t location;
+    if(NodeHash.Find(nid,location)){
+        NvmNode* node=GetNodePtr(location);
+        while(node->GetNextNodeAddre()!=0){
+            uint64_t temp=node->GetNextNodeAddre();
+            DeleteNode(location);
+            location=temp;
+            node=GetNodePtr(location);
+        }
+        DeleteNode(location);
+    }
+}
+
+void UNDerict_Graph::AddEdgeToNode(const uint64_t &location, const int &edgenid){
+    uint64_t temp=location;
+    NvmNode* curnode=GetNodePtr(temp);
+    while(curnode->GetNextNodeAddre()!=0 && (curnode->GetDeg())>=InOutEidNumDef){
+        temp=curnode->GetNextNodeAddre();
+        curnode=GetNodePtr(temp);
+    }
+    if(curnode->GetDeg()<InOutEidNumDef){curnode->AddNbrNid(edgenid);}
+    else{
+        NvmNode* newnode=AddExistNode(curnode->GetId(),0);
+        newnode->AddNbrNid(edgenid);
+        curnode->SetNextNodeAddre(GetNodeLocation(newnode));
+    }
+}
+
+int UNDerict_Graph::AddEdge(const int &SrcNid, const int &DstNid){
+    uint64_t location1,location2;
+    if(!NodeHash.Find(SrcNid, location1) || !NodeHash.Find(DstNid, location2)) {return -1;}
+    if(IsEdge(SrcNid, DstNid)) {return 0;}
+    AddEdgeToNode(location1, DstNid);
+    AddEdgeToNode(location2, SrcNid);
+    EdgeNum++;
+    return 1;
+}
+
+int UNDerict_Graph::AddEdge2(const int &SrcNid, const int &DstNid){
+    if(IsEdge(SrcNid, DstNid)) {return 0;}
+    uint64_t location1,location2;
+    if(!NodeHash.Find(SrcNid, location1)){AddNode(SrcNid);}
+    if(!NodeHash.Find(DstNid, location2)){AddNode(DstNid);}
+    AddEdgeToNode(location1, DstNid);
+    AddEdgeToNode(location2, SrcNid);
+    EdgeNum++;
+    return 1;
+}
+
+void UNDerict_Graph::DelEdgeOfNode(const uint64_t &location, const int &edgenid){
+    uint64_t temp=location;
+    NvmNode* curnode=GetNodePtr(temp);
+    NvmNode* prevnode=curnode;
+    if((!curnode->DeleteNbrNid(edgenid))&&curnode->GetNextNodeAddre()!=0){
+        prevnode=curnode;
+        temp=curnode->GetNextNodeAddre();
+        curnode=GetNodePtr(temp);
+    }
+    if(curnode->GetFlag()==0 && curnode->GetDeg()==0){
+        prevnode->SetNextNodeAddre(curnode->GetNextNodeAddre());
+        DeleteNode(temp);
+    }
+}
+void UNDerict_Graph::DelEdge(const int &SrcNid, const int &DstNid){
+    if(!IsEdge(SrcNid, DstNid)) {return;}
+    uint64_t location1,location2;
+    NodeHash.Find(SrcNid, location1);
+    NodeHash.Find(DstNid, location2);
+    DelEdgeOfNode(location1, DstNid);
+    DelEdgeOfNode(location2, SrcNid);
+    EdgeNum--;
+}
 
 
 

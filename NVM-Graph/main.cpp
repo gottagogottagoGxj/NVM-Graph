@@ -11,41 +11,24 @@
 #include<set>
 #include<queue>
 #include<bitset>
-#include "UNDerict_Graph.cpp"
+#include "UNDerict_Graph.h"
 using namespace std;
 
 
 int main(){
-    Arena arena(UNDerict_Graph::GetNodeSize());
+    size_t nodesize=UNDerict_Graph::GetNodeSize();
+    size_t alloc=nodesize*20;
+    Arena arena(nodesize,alloc);
     UNDerict_Graph graph(&arena);
-    graph.AddNode(1);
-    graph.AddNode(2, "abcdefdghijklmnopqrstuvwxyzabcdefghijklmnopqresidhfgdbsjs");
-    graph.AddNode(3, "1234");
-    cout<<graph.GetNodeNum()<<endl;
-    //graph.DelNode(1);
+    for(int i=1;i<20;++i){
+        graph.AddNode(i);
+    }
     UNDerict_Graph::NvmNodeI iter=graph.HeadNI();
     iter++;
-    while(!iter.IsEnd()){
-        cout<<iter.GetId()<<endl;
-        iter++;
-    }
-    graph.DelNode(1);
-    graph.AddNode(4,"gxj");
-    iter=graph.HeadNI();
-    iter++;
-    while(!iter.IsEnd()){
-        cout<<iter.GetId()<<endl;
-        iter++;
-    }
-   
-    graph.AddExistNode(2);
-    graph.AddNode(5);
-    iter=graph.HeadNI();
-    iter++;
-    while(!iter.IsEnd()){
-        cout<<iter.GetData()<<endl;
-        iter++;
-    }
+    while(!iter.IsEnd()){cout<<iter.GetId()<<endl;iter++;}
+    
+    
+    
     
     return 0;
 }
