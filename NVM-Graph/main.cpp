@@ -12,29 +12,22 @@
 #include<queue>
 #include<bitset>
 #include "UNDerict_Graph.h"
-#include "Derict_Graph.h"
+#include "Direct_graph.h"
+#include"Direct_multigraph.h"
 using namespace std;
 
 
+
 int main(){
-    size_t nodesize=UNDerict_Graph::GetNodeSize();
-    size_t alloc=nodesize*50;
-    Arena arena(nodesize,alloc);
-    UNDerict_Graph graph(&arena);
-    for(int i=1;i<20;++i){
-        graph.AddNode(i);
-    }
-    for(int i=1;i<20;++i){
-        for(int j=1;j<20;++j){
-            graph.AddEdge(i, j);
-        }
-    }
-    UNDerict_Graph::EdgeI eiter=graph.BegEI();
-    while(!eiter.IsEnd()){cout<<'('<<eiter.GetSrcNid()<<','<<eiter.GetDstNid()<<')'<<" "; eiter++;}
+    Direct_multigraph::Node node(1,"1234");
+    node.AddInEidSort(3);
+    node.AddInEidSort(2);
+    node.AddInEidSort(5);
+    node.AddInEidSort(1);
+    for(int i=0;i<node.GetInDeg();++i){cout<<node.GetInEid(i)<<" ";}
     cout<<endl;
-    for(int i=1;i<20;++i) {graph.DelEdge(1, i);graph.DelEdge(2, i);}
-    eiter=graph.BegEI();
-    while(!eiter.IsEnd()){cout<<'('<<eiter.GetSrcNid()<<','<<eiter.GetDstNid()<<')'<<" "; eiter++;}
+    node.DeleteInEidSort(3);
+    for(int i=0;i<node.GetInDeg();++i){cout<<node.GetInEid(i)<<" ";}
     cout<<endl;
     
     

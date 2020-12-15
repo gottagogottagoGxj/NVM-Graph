@@ -12,8 +12,7 @@
 #include"hashtable.h"
 #include"Arena.h"
 #include"InOut.h"
-const int NodeDatalengthDef=32;//默认标签最大长度是31个字节，最后一子节存'\0'
-const int InOutEidNumDef=10;//默认边数
+
 
 //位置都是相对于Arena的begin_ptr的偏移
 class UNDerict_Graph{
@@ -352,7 +351,7 @@ public:
         return NvmNodeI(HeadNode, curnode, NodeTable->EndPtr());
     }
     NvmNodeI EndNI()const{
-        NvmNode* curnode=GetNodePtr(NodeTable->BeginPtr()-NodeTable->EndPtr());
+        NvmNode* curnode=GetNodePtr(NodeTable->EndPtr()-NodeTable->BeginPtr());
         return NvmNodeI(HeadNode, curnode, NodeTable->EndPtr());
     }
     
@@ -506,8 +505,8 @@ int UNDerict_Graph::AddEdge(const int &SrcNid, const int &DstNid){
 int UNDerict_Graph::AddEdge2(const int &SrcNid, const int &DstNid){
     if(IsEdge(SrcNid, DstNid)) {return 0;}
     uint64_t location1,location2;
-    if(!NodeHash.Find(SrcNid, location1)){AddNode(SrcNid);}
-    if(!NodeHash.Find(DstNid, location2)){AddNode(DstNid);}
+    if(!NodeHash.Find(SrcNid, location1)){AddNode(SrcNid);NodeHash.Find(SrcNid, location1);}
+    if(!NodeHash.Find(DstNid, location2)){AddNode(DstNid);NodeHash.Find(DstNid, location2);}
     AddEdgeToNode(location1, DstNid);
     if(SrcNid!=DstNid){
         AddEdgeToNode(location2, SrcNid);
