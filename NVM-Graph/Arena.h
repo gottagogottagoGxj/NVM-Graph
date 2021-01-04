@@ -7,6 +7,7 @@
 
 #ifndef Arena_h
 #define Arena_h
+#include<cstring>
 #include<stdlib.h>
 
 typedef unsigned int uint;

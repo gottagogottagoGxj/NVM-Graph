@@ -14,22 +14,31 @@
 #include "UNDerict_Graph.h"
 #include "Direct_graph.h"
 #include"Direct_multigraph.h"
+#include"Attr.h"
 using namespace std;
 
 
 
 int main(){
-    Direct_multigraph::Node node(1,"1234");
-    node.AddInEidSort(3);
-    node.AddInEidSort(2);
-    node.AddInEidSort(5);
-    node.AddInEidSort(1);
-    for(int i=0;i<node.GetInDeg();++i){cout<<node.GetInEid(i)<<" ";}
-    cout<<endl;
-    node.DeleteInEidSort(3);
-    for(int i=0;i<node.GetInDeg();++i){cout<<node.GetInEid(i)<<" ";}
-    cout<<endl;
-    
+    Arena a(10,10240),b(10),c(10);
+    Comparator<AttrIndexKey> compare;
+    Attr attr(&a,compare,&b,&c);
+    attr.AddAttrName("Name");
+    attr.AddAttrName("Age");
+    attr.AddAttrName("Sex");
+    attr.AddAttrDat(1, "Name", "WangTingting");
+    attr.AddAttrDat(1, "Age", "23");
+    attr.AddAttrDat(1, "Sex", "Female");
+    char data[100];
+    attr.GetAttrDat(1, "Name", data);
+    cout<<data<<endl;
+    attr.GetAttrDat(1, "Age", data);
+    cout<<data<<endl;
+    attr.GetAttrDat(1, "Sex", data);
+    cout<<data<<endl;
+    attr.DelAttrDat(1);
+    bool flag=attr.GetAttrDat(1, "Name", data);
+    cout<<flag<<endl;
     
     return 0;
 }

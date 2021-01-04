@@ -43,12 +43,12 @@ bool MIn::PutBf(const void *_Bf, const uint &_BfL){
 class MOut{
 private:
     const char * Bf;
-    uint BfC;
-    const uint BfL;
+    size_t BfC;
+    const size_t BfL;
 public:
-    MOut(const char* _Bf, const uint& _BfL):Bf(_Bf),BfL(_BfL),BfC(0){}
-    int Len() const {return BfC;}
-    int MaxLen()const{return BfL;}
+    MOut(const char* _Bf, const size_t& _BfL):Bf(_Bf),BfL(_BfL),BfC(0){}
+    size_t Len() const {return BfC;}
+    size_t MaxLen()const{return BfL;}
     bool GetBf(void* _Bf,const uint& _BfL);
     bool Load(int & Int){return GetBf(&Int, sizeof(int));}
     bool Load(bool & Bool){return GetBf(&Bool, sizeof(bool));}
