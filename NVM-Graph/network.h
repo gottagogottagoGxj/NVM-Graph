@@ -248,7 +248,7 @@ public:
     int AddNode(const NodeIter& NodeI){return AddNode(NodeI.GetId(),NodeI.GetData());}
     void DelNode(const int& Nid);
     void DelNode(const NodeIter& NodeI){DelNode(NodeI.GetId());}
-    bool IsNode(const int& Nid){uint64_t location; return NodeHash.Find(Nid,location);}
+    bool IsNode(const int& Nid)const{uint64_t location; return NodeHash.Find(Nid,location);}
     
     int GetEdges()const{return EdgeNum;}
     int GetMxEid()const{return MxEid;}
@@ -876,7 +876,7 @@ bool Net::AddAttrDatN(const int& Nid,const char* AttrName,const char* Val){
 }
 bool Net::GetAttrDatN(const int& Nid,const int& AttrId,char* Val)const{
     if(!IsNode(Nid)) return false;
-    return AttrN.GetAttrDat(Nid,AttrId,val);
+    return AttrN.GetAttrDat(Nid,AttrId,Val);
 }
 bool Net::GetAttrDatN(const int& Nid,const char* AttrName,char* Val)const{
     if(!IsNode(Nid)) return false;
@@ -891,7 +891,7 @@ void Net::DelAttrDatN(const int& Nid,const char* AttrName){
     AttrN.DelAttrDat(Nid,AttrName);
 }
 void Net::DelAttrDatN(const int& Nid){
-    if(!IsNode(Nid)) return false;
+    if(!IsNode(Nid)) return;
     AttrN.DelAttrDat(Nid);
 }
 int Net::AddAttrNameN(const char* AttrName){
@@ -914,23 +914,23 @@ bool Net::AddAttrDatE(const int& Eid,const char* AttrName,const char* Val){
 }
 bool Net::GetAttrDatE(const int& Eid,const int& AttrId,char* Val)const{
     if(!IsEdge(Eid)) return false;
-    return AttrE.GetAttrDat(Eid,AttrId,val);
+    return AttrE.GetAttrDat(Eid,AttrId,Val);
 }
 bool Net::GetAttrDatE(const int& Eid,const char* AttrName,char* Val)const{
     if(!IsEdge(Eid)) return false;
     return AttrE.GetAttrDat(Eid,AttrName,Val);
 }
 void Net::DelAttrDatE(const int& Eid,const int& AttrId){
-    if(!IsEdge(Eid)) return false;
+    if(!IsEdge(Eid)) return;
     AttrE.DelAttrDat(Eid,AttrId);
 }
 void Net::DelAttrDatE(const int& Eid,const char* AttrName){
-    if(!IsEdge(Eid)) return false;
+    if(!IsEdge(Eid)) return;
     AttrE.DelAttrDat(Eid,AttrName);
 }
 void Net::DelAttrDatE(const int& Eid){
-    if(!IsEdge(Eid)) return false;
-    AttrE.DelAttrDat(Nid);
+    if(!IsEdge(Eid)) return;
+    AttrE.DelAttrDat(Eid);
 }
 int Net::AddAttrNameE(const char* AttrName){
     return AttrE.AddAttrName(AttrName);
