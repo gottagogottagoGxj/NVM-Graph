@@ -150,9 +150,10 @@ bool HashTable::Add(const int& key,const uint64_t& location){
     size_t index;
     uint32_t tag;
     GenerateIndexTagHash(key, index, tag);
-    return AddImpl(key,index, tag, location);
-    
-    
+    if(AddImpl(key,index, tag, location)) return true;
+    size_t newbucketnum=BucketNum*2;
+    while(!ReSize(newbucketnum)) newbucketnum*=2;
+    return true;
 }
 bool HashTable::AddImpl(const int& key,const size_t index,const uint32_t tag,const uint64_t& location){
     Pair curslot(tag,key,location);

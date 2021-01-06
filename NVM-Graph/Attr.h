@@ -22,9 +22,25 @@ private:
     int MxAttrId;
     
 public:
-    Attr(Arena* nametable,const Comparator<AttrIndexKey> compare, Arena* attrindex,Arena* attrtable):NameTable(nametable),AttrIndex(compare,attrindex),AttrTable(attrtable),AttrNameToId(32,4),AttrIdToName(32,4),MxAttrId(0){
-        if(NameTable->BeginPtr()!=NameTable->EndPtr()){
-            
+    Attr(Arena* nametable, Arena* attrindex,Arena* attrtable):NameTable(nametable),AttrIndex(Comparator<AttrIndexKey>(),attrindex),AttrTable(attrtable),AttrNameToId(32,4),AttrIdToName(32,4),MxAttrId(0){
+        size_t maxlength=NameTable->EndPtr()-NameTable->BeginPtr();
+        if(maxlength!=0){
+            MOut NVMout(NameTable->BeginPtr(),maxlength);
+            while (NVMout.Len()<NVMout.MaxLen()) {
+                bool flag;
+                int attrid,length;
+                size_t offset=NVMout.Len();
+                NVMout.Load(flag);
+                NVMout.Load(attrid);
+                NVMout.Load(length);
+                const int namelength=length;
+                char attrname[namelength];
+                NVMout.Load(attrname, namelength);
+                if(!flag) continue;
+                AttrNameToId.Add(attrname, namelength, attrid);
+                AttrIdToName.Add(attrid, sizeof(int), offset);
+                MxAttrId=MxAttrId>(attrid+1)? MxAttrId:(attrid+1);
+            }
         }
     }
     bool AddAttrDat(const int& Id,const char* AttrName,const char* Val);//若AttrName不存在返回false,若该属性已存在，返回false
@@ -35,7 +51,7 @@ public:
     void DelAttrDat(const int& Id,const int& AttrId);
     void DelAttrDat(const int& Id);
     int AddAttrName(const char* AttrName);
-    int GetAttrId(const char* AttrName)const;
+    bool GetAttrId(int& AttrId,const char* AttrName)const;
     bool GetAttrName(const int& AttrId,char* AttrName)const;
     
 };
@@ -108,10 +124,9 @@ int Attr::AddAttrName(const char *AttrName){
     return AttrId;
 }
 
-int Attr::GetAttrId(const char *AttrName)const{
-    int AttrId;
-    if(!AttrNameToId.Find(AttrName, strlen(AttrName), AttrId)) return -1;
-    return AttrId;
+bool Attr::GetAttrId(int& AttrId,const char *AttrName)const{
+    if(!AttrNameToId.Find(AttrName, strlen(AttrName), AttrId)) return false;
+    return true;
 }
 bool Attr::GetAttrName(const int &AttrId, char *AttrName)const{
     size_t offset;

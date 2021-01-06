@@ -377,7 +377,10 @@ bool HashTable<Key,Dat>::Add(const Key &key, const size_t& length, const Dat &da
     size_t index;
     uint64_t tag;
     GenerateIndexTagHash(key, length, index, tag);
-    return AddImpl(index, tag, data);
+    if(AddImpl(index, tag, data)) return true;
+    size_t newbucket=BucketNum*2;
+    while(!ReSize(newbucket)) newbucket*=2;
+    return true;
 }
 template<class Key,class Dat>
 bool HashTable<Key,Dat>::AddImpl(const size_t index,const uint64_t tag,const Dat& data){

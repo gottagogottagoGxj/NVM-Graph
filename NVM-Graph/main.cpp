@@ -14,15 +14,14 @@
 #include "UNDerict_Graph.h"
 #include "Direct_graph.h"
 #include"Direct_multigraph.h"
-#include"Attr.h"
+#include"network.h"
 using namespace std;
 
 
 
 int main(){
-    Arena a(10,10240),b(10),c(10);
-    Comparator<AttrIndexKey> compare;
-    Attr attr(&a,compare,&b,&c);
+    Arena a(10),b(10),c(10),d(10),e(10),f(10),node(Net::GetNodeSize()),edge(Net::GetEdgeSize());
+    /*Attr attr(&a,&b,&c);
     attr.AddAttrName("Name");
     attr.AddAttrName("Age");
     attr.AddAttrName("Sex");
@@ -38,7 +37,8 @@ int main(){
     cout<<data<<endl;
     attr.DelAttrDat(1);
     bool flag=attr.GetAttrDat(1, "Name", data);
-    cout<<flag<<endl;
+    cout<<flag<<endl;*/
+    Net net(&node,&edge,&a,&b,&c,&d,&e,&f);
     
     return 0;
 }

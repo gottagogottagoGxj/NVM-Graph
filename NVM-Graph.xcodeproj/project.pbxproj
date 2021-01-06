@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		1D86CD55254058C700E3ADC7 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1D86CD54254058C700E3ADC7 /* main.cpp */; };
+		1D8BB76725A54E7C00754408 /* network.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1D8BB76625A54E7C00754408 /* network.cpp */; };
 		1DA90E4525870615005F4F48 /* Direct_multigraph.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1DA90E4425870615005F4F48 /* Direct_multigraph.cpp */; };
 		1DB8B02E2575F145003BD17C /* Derict_Graph.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1DB8B02D2575F145003BD17C /* Derict_Graph.cpp */; };
 /* End PBXBuildFile section */
@@ -31,6 +32,8 @@
 		1D86CD51254058C700E3ADC7 /* NVM-Graph */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = "NVM-Graph"; sourceTree = BUILT_PRODUCTS_DIR; };
 		1D86CD54254058C700E3ADC7 /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
 		1D86CD5C25405CC500E3ADC7 /* UNDerict_Graph.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = UNDerict_Graph.h; sourceTree = "<group>"; };
+		1D8BB76425A4092A00754408 /* network.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = network.h; sourceTree = "<group>"; };
+		1D8BB76625A54E7C00754408 /* network.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = network.cpp; sourceTree = "<group>"; };
 		1DA90E43258705DB005F4F48 /* Direct_multigraph.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Direct_multigraph.h; sourceTree = "<group>"; };
 		1DA90E4425870615005F4F48 /* Direct_multigraph.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Direct_multigraph.cpp; sourceTree = "<group>"; };
 		1DB615E92566AA0C00FB679E /* InOut.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = InOut.h; sourceTree = "<group>"; };
@@ -86,6 +89,8 @@
 				1DB615EB2567634B00FB679E /* MurmurHash.h */,
 				1DB615E92566AA0C00FB679E /* InOut.h */,
 				1DDD74A1259B10E400EC8EFA /* Attr.h */,
+				1D8BB76425A4092A00754408 /* network.h */,
+				1D8BB76625A54E7C00754408 /* network.cpp */,
 			);
 			path = "NVM-Graph";
 			sourceTree = "<group>";
@@ -148,6 +153,7 @@
 			files = (
 				1D86CD55254058C700E3ADC7 /* main.cpp in Sources */,
 				1DA90E4525870615005F4F48 /* Direct_multigraph.cpp in Sources */,
+				1D8BB76725A54E7C00754408 /* network.cpp in Sources */,
 				1DB8B02E2575F145003BD17C /* Derict_Graph.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

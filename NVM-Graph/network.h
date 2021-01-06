@@ -1,18 +1,15 @@
 //
-//  Direct_multigraph.h
+//  network.h
 //  NVM-Graph
 //
-//  Created by 江清月近人 on 2020/12/14.
+//  Created by 江清月近人 on 2021/1/5.
 //
 
-#ifndef Direct_multigraph_h
-#define Direct_multigraph_h
-
-#include"Arena.h"
+#ifndef network_h
+#define network_h
+#include"Attr.h"
 #include"hashtable.h"
-#include<string>
-
-class Direct_multigraph{
+class Net{
 public:
     class Node{
     private:
@@ -115,10 +112,10 @@ public:
         const char* Begin;
         const char* End;
         Node* CurNode;
-        const Direct_multigraph* Graph;
+        const Net* Graph;
     public:
         NodeIter():Begin(NULL),End(NULL),CurNode(NULL),Graph(NULL){}
-        NodeIter(const char* begin,const char* end,Node* cur,const Direct_multigraph* graph):Begin(begin),End(end),CurNode(cur),Graph(graph){}
+        NodeIter(const char* begin,const char* end,Node* cur,const Net* graph):Begin(begin),End(end),CurNode(cur),Graph(graph){}
         NodeIter(const NodeIter& nodeI):Begin(nodeI.Begin),End(nodeI.End),CurNode(nodeI.CurNode),Graph(nodeI.Graph){}
         NodeIter& operator=(const NodeIter& nodeI){Begin=nodeI.Begin;End=nodeI.End;CurNode=nodeI.CurNode;Graph=nodeI.Graph;return *this;}
         NodeIter& operator++(int){
@@ -166,10 +163,10 @@ public:
     private:
         const char* Begin,*End;
         Edge* CurEdge;
-        const Direct_multigraph* Graph;
+        const Net* Graph;
     public:
         EdgeIter():Begin(NULL),End(NULL),CurEdge(NULL),Graph(NULL){}
-        EdgeIter(const char* begin,const char* end,Edge* edge,const Direct_multigraph* graph):Begin(begin),End(end),CurEdge(edge),Graph(graph){}
+        EdgeIter(const char* begin,const char* end,Edge* edge,const Net* graph):Begin(begin),End(end),CurEdge(edge),Graph(graph){}
         EdgeIter(const EdgeIter& edgeI):Begin(edgeI.Begin),End(edgeI.End),CurEdge(edgeI.CurEdge),Graph(edgeI.Graph){}
         EdgeIter& operator=(const EdgeIter& edgeI){Begin=edgeI.Begin; End=edgeI.End;CurEdge=edgeI.CurEdge;Graph=edgeI.Graph;return *this; }
         EdgeIter& operator++(int){
@@ -205,6 +202,7 @@ private:
     int MxNid,MxEid,NodeNum,EdgeNum;
     int FreeNodeNum,FreeEdgeNum;
     uint64_t FreeNodeLocation,FreeEdgeLocation;
+    Attr AttrN,AttrE;
 private:
     Node* GetNodePtr(const uint64_t& location)const{return (Node*)(Nodetable->BeginPtr()+location);}
     uint64_t GetNodeLocation(const Node* node)const{return (char*)node-Nodetable->BeginPtr();}
@@ -219,7 +217,7 @@ private:
     Node* AddExistNode(const int& nid,const int& flag);
     void AddEdgeToTable(const int &SrcNid, const int &DstNid,const char* Data,int Eid);
 public:
-    Direct_multigraph(Arena* node,Arena* edge);
+    Net(Arena* node,Arena* edge,Arena* namen,Arena* indexn,Arena* atrren,Arena* namee,Arena* indexe,Arena* attre);
     NodeIter BegNI()const{
         NodeIter iter=NodeIter(Nodetable->BeginPtr(),Nodetable->EndPtr(),(Node*)(Nodetable->HeadPtr()),this);
         if(iter.GetFlag()<=0) iter++;
@@ -267,18 +265,40 @@ public:
     void SetNData(const int& Nid,const char* Data);
     const char* GetEData(const int& Eid)const;
     void SetEData(const int& Eid,const char* Data);
+    
+    bool AddAttrDatN(const int& Nid,const int& AttrId,const char* Val);
+    bool AddAttrDatN(const int& Nid,const char* AttrName,const char* Val);
+    bool GetAttrDatN(const int& Nid,const int& AttrId,char* Val)const;
+    bool GetAttrDatN(const int& Nid,const char* AttrName,char* Val)const;
+    void DelAttrDatN(const int& Nid,const int& AttrId);
+    void DelAttrDatN(const int& Nid,const char* AttrName);
+    void DelAttrDatN(const int& Nid);
+    int AddAttrNameN(const char* AttrName);
+    bool GetAttrIdN(int& AttrId,const char* AttrName)const;
+    bool GetAttrNameN(const int& AttrId,char* AttrName)const;
+    bool AddAttrDatE(const int& Eid,const int& AttrId,const char* Val);
+    bool AddAttrDatE(const int& Eid,const char* AttrName,const char* Val);
+    bool GetAttrDatE(const int& Eid,const int& AttrId,char* Val)const;
+    bool GetAttrDatE(const int& Eid,const char* AttrName,char* Val)const;
+    void DelAttrDatE(const int& Eid,const int& AttrId);
+    void DelAttrDatE(const int& Eid,const char* AttrName);
+    void DelAttrDatE(const int& Eid);
+    int AddAttrNameE(const char* AttrName);
+    bool GetAttrIdE(int& AttrId,const char* AttrName)const;
+    bool GetAttrNameE(const int& AttrId,char* AttrName)const;
+    
 };
 
 
 
 
-inline Direct_multigraph::Node::Node(const int nid,const char* data):Nid(nid),InEidVNum(0),OutEidVNum(0),Flag(1),NextNode(0){
+inline Net::Node::Node(const int nid,const char* data):Nid(nid),InEidVNum(0),OutEidVNum(0),Flag(1),NextNode(0){
     size_t length=strlen(data);
     if(length>=NodeDatalengthDef) length=NodeDatalengthDef-1;
     memcpy(Data, data, length);
     Data[length]='\0';
 }
-inline Direct_multigraph::Node::Node(MOut& Out){
+inline Net::Node::Node(MOut& Out){
     Out.Load(Nid);
     Out.Load(Data, NodeDatalengthDef);
     Out.Load(InEidVNum);
@@ -288,7 +308,7 @@ inline Direct_multigraph::Node::Node(MOut& Out){
     Out.Load(Flag);
     Out.Load(NextNode);
 }
-void Direct_multigraph::Node::Save(MIn &In){
+void Net::Node::Save(MIn &In){
     In.Save(Nid);
     In.Save(Data, NodeDatalengthDef);
     In.Save(InEidVNum);
@@ -298,21 +318,21 @@ void Direct_multigraph::Node::Save(MIn &In){
     In.Save(Flag);
     In.Save(NextNode);
 }
-inline void Direct_multigraph::Node::SetData(const char *data){
+inline void Net::Node::SetData(const char *data){
     size_t length=strlen(data);
     if(length>=NodeDatalengthDef) length=NodeDatalengthDef-1;
     memcpy(Data, data, length);
     Data[length]='\0';
 }
-inline bool Direct_multigraph::Node::IsInEid(const int &eid)const{
+inline bool Net::Node::IsInEid(const int &eid)const{
     for(int i=0;i<InEidVNum;++i){if(InEidV[i]==eid) return true;}
     return false;
 }
-inline bool Direct_multigraph::Node::IsOutEid(const int& eid)const{
+inline bool Net::Node::IsOutEid(const int& eid)const{
     for(int i=0;i<OutEidVNum;++i){if(OutEidV[i]==eid) return true;}
     return false;
 }
-inline bool Direct_multigraph::Node::AddInEid(const int& Eid){
+inline bool Net::Node::AddInEid(const int& Eid){
     if(InEidVNum<InOutEidNumDef){
         InEidV[InEidVNum]=Eid;
         InEidVNum++;
@@ -320,7 +340,7 @@ inline bool Direct_multigraph::Node::AddInEid(const int& Eid){
     }
     return false;
 }
-inline bool Direct_multigraph::Node::AddOutEid(const int &Eid){
+inline bool Net::Node::AddOutEid(const int &Eid){
     if(OutEidVNum<InOutEidNumDef){
         OutEidV[OutEidVNum]=Eid;
         OutEidVNum++;
@@ -328,7 +348,7 @@ inline bool Direct_multigraph::Node::AddOutEid(const int &Eid){
     }
     return false;
 }
-inline bool Direct_multigraph::Node::AddInEid(const int *Eid, const int &EidN){
+inline bool Net::Node::AddInEid(const int *Eid, const int &EidN){
     if(InEidVNum+EidN<=InOutEidNumDef){
         memcpy(InEidV, Eid, sizeof(int)*EidN);
         InEidVNum+=EidN;
@@ -336,7 +356,7 @@ inline bool Direct_multigraph::Node::AddInEid(const int *Eid, const int &EidN){
     }
     return false;
 }
-inline bool Direct_multigraph::Node::AddOutEid(const int *Eid, const int &EidN){
+inline bool Net::Node::AddOutEid(const int *Eid, const int &EidN){
     if(OutEidVNum+EidN<=InOutEidNumDef){
         memcpy(OutEidV, Eid, sizeof(int)*EidN);
         OutEidVNum+=EidN;
@@ -344,15 +364,15 @@ inline bool Direct_multigraph::Node::AddOutEid(const int *Eid, const int &EidN){
     }
     return false;
 }
-inline void Direct_multigraph::Node::DeleteInEidN(const int &EidN){
+inline void Net::Node::DeleteInEidN(const int &EidN){
     for(int i=EidN;i<(InEidVNum-1);++i){InEidV[i]=InEidV[i+1];}
     InEidVNum--;
 }
-inline void Direct_multigraph::Node::DeleteOutEidN(const int &EidN){
+inline void Net::Node::DeleteOutEidN(const int &EidN){
     for(int i=EidN;i<(OutEidVNum-1);++i){OutEidV[i]=OutEidV[i+1];}
     OutEidVNum--;
 }
-inline bool Direct_multigraph::Node::DeleteInEid(const int& Eid){
+inline bool Net::Node::DeleteInEid(const int& Eid){
     for(int i=0;i<InEidVNum;++i){
         if(InEidV[i]==Eid){
             for(int j=i;j<(InEidVNum-1);++j){InEidV[j]=InEidV[j+1];}
@@ -362,7 +382,7 @@ inline bool Direct_multigraph::Node::DeleteInEid(const int& Eid){
     }
     return false;
 }
-inline bool Direct_multigraph::Node::DeleteOutEid(const int& Eid){
+inline bool Net::Node::DeleteOutEid(const int& Eid){
     for(int i=0;i<OutEidVNum;++i){
         if(OutEidV[i]==Eid){
             for(int j=i;j<(OutEidVNum-1);++j){OutEidV[j]=OutEidV[j+1];}
@@ -372,7 +392,8 @@ inline bool Direct_multigraph::Node::DeleteOutEid(const int& Eid){
     }
     return false;
 }
-bool Direct_multigraph::Node::AddInEidSort(const int &Eid,const bool& asc){
+
+bool Net::Node::AddInEidSort(const int &Eid,const bool& asc){
     if(InEidVNum<InOutEidNumDef){
         int index=SearchBinRight(InEidV, 0, InEidVNum, Eid, Comparison(asc));
         for(int i=InEidVNum;i>index;--i) InEidV[i]=InEidV[i-1];
@@ -382,7 +403,7 @@ bool Direct_multigraph::Node::AddInEidSort(const int &Eid,const bool& asc){
     }
     return false;
 }
-bool Direct_multigraph::Node::AddOutEidSort(const int &Eid,const bool& asc){
+bool Net::Node::AddOutEidSort(const int &Eid,const bool& asc){
     if(OutEidVNum<InOutEidNumDef){
         int index=SearchBinRight(OutEidV, 0, OutEidVNum, Eid, Comparison(asc));
         for(int i=OutEidVNum;i>index;--i) OutEidV[i]=OutEidV[i-1];
@@ -392,7 +413,7 @@ bool Direct_multigraph::Node::AddOutEidSort(const int &Eid,const bool& asc){
     }
     return false;
 }
-bool Direct_multigraph::Node::DeleteInEidSort(const int &Eid,const bool& asc){
+bool Net::Node::DeleteInEidSort(const int &Eid,const bool& asc){
     int index=SearchBin(InEidV, 0, InEidVNum, Eid, Comparison(asc));
     if(index>=0){
         for(int i=index;i<(InEidVNum-1);++i) InEidV[i]=InEidV[i+1];
@@ -401,7 +422,7 @@ bool Direct_multigraph::Node::DeleteInEidSort(const int &Eid,const bool& asc){
     }
     return false;
 }
-bool Direct_multigraph::Node::DeleteOutEidSort(const int &Eid,const bool& asc){
+bool Net::Node::DeleteOutEidSort(const int &Eid,const bool& asc){
     int index=SearchBin(OutEidV, 0, OutEidVNum, Eid, Comparison(asc));
     if(index>=0){
         for(int i=index;i<(OutEidVNum-1);++i) OutEidV[i]=OutEidV[i+1];
@@ -411,7 +432,7 @@ bool Direct_multigraph::Node::DeleteOutEidSort(const int &Eid,const bool& asc){
     return false;
 }
 
-Direct_multigraph::Direct_multigraph(Arena* node,Arena* edge):Nodetable(node),EdgeTable(edge),NodeHash(32,4),EdgeHash(32,4),MxNid(1),MxEid(1),NodeNum(0),EdgeNum(0),FreeNodeNum(0),FreeNodeLocation(0),FreeEdgeNum(0),FreeEdgeLocation(0){
+Net::Net(Arena* node,Arena* edge,Arena* namen,Arena* indexn,Arena* attrn,Arena* namee,Arena* indexe,Arena* attre):Nodetable(node),EdgeTable(edge),NodeHash(32,4),EdgeHash(32,4),MxNid(1),MxEid(1),NodeNum(0),EdgeNum(0),FreeNodeNum(0),FreeNodeLocation(0),FreeEdgeNum(0),FreeEdgeLocation(0),AttrN(namen,indexn,attrn),AttrE(namee,indexe,attre){
     if(Nodetable->EndPtr()!=Nodetable->BeginPtr()){
         Node* temp=(Node*)Nodetable->HeadPtr();
         for(;(char*)temp<Nodetable->EndPtr();++temp){
@@ -446,7 +467,7 @@ Direct_multigraph::Direct_multigraph(Arena* node,Arena* edge):Nodetable(node),Ed
     }
 }
 
-int Direct_multigraph::NodeIter::GetInDeg()const{
+int Net::NodeIter::GetInDeg()const{
     int InDeg=0;
     Node* temp=CurNode;
     while(temp->GetNextNodeAddre()!=0){
@@ -456,7 +477,7 @@ int Direct_multigraph::NodeIter::GetInDeg()const{
     InDeg+=temp->GetNextNodeAddre();
     return InDeg;
 }
-int Direct_multigraph::NodeIter::GetOutDeg()const{
+int Net::NodeIter::GetOutDeg()const{
     int OutDeg=0;
     Node* temp=CurNode;
     while(temp->GetNextNodeAddre()!=0){
@@ -466,7 +487,7 @@ int Direct_multigraph::NodeIter::GetOutDeg()const{
     OutDeg+=temp->GetNextNodeAddre();
     return OutDeg;
 }
-bool Direct_multigraph::NodeIter::IsNbrEid(const int& eid)const{
+bool Net::NodeIter::IsNbrEid(const int& eid)const{
     Node* temp=CurNode;
     while(temp->GetNextNodeAddre()!=0){
         if(temp->IsNbrEid(eid)) return true;
@@ -474,7 +495,7 @@ bool Direct_multigraph::NodeIter::IsNbrEid(const int& eid)const{
     }
     return temp->IsNbrEid(eid);
 }
-bool Direct_multigraph::NodeIter::IsInEid(const int &eid)const{
+bool Net::NodeIter::IsInEid(const int &eid)const{
     Node* temp=CurNode;
     while (temp->GetNextNodeAddre()!=0) {
         if(temp->IsInEid(eid)) return true;
@@ -482,7 +503,7 @@ bool Direct_multigraph::NodeIter::IsInEid(const int &eid)const{
     }
     return temp->IsInEid(eid);
 }
-bool Direct_multigraph::NodeIter::IsOutEid(const int &eid)const{
+bool Net::NodeIter::IsOutEid(const int &eid)const{
     Node* temp=CurNode;
     while (temp->GetNextNodeAddre()!=0) {
         if(temp->IsOutEid(eid)) return true;
@@ -490,7 +511,7 @@ bool Direct_multigraph::NodeIter::IsOutEid(const int &eid)const{
     }
     return temp->IsOutEid(eid);
 }
-bool Direct_multigraph::NodeIter::IsNbrEidSort(const int &eid)const{
+bool Net::NodeIter::IsNbrEidSort(const int &eid)const{
     Node* temp=CurNode;
     while(temp->GetNextNodeAddre()!=0){
         if(temp->IsNbrEidSort(eid)) return true;
@@ -498,7 +519,7 @@ bool Direct_multigraph::NodeIter::IsNbrEidSort(const int &eid)const{
     }
     return temp->IsNbrEid(eid);
 }
-bool Direct_multigraph::NodeIter::IsInEidSort(const int &eid)const{
+bool Net::NodeIter::IsInEidSort(const int &eid)const{
     Node* temp=CurNode;
     while (temp->GetNextNodeAddre()!=0) {
         if(temp->IsInEidSort(eid)) return true;
@@ -506,7 +527,7 @@ bool Direct_multigraph::NodeIter::IsInEidSort(const int &eid)const{
     }
     return temp->IsInEid(eid);
 }
-bool Direct_multigraph::NodeIter::IsOutEidSort(const int &eid)const{
+bool Net::NodeIter::IsOutEidSort(const int &eid)const{
     Node* temp=CurNode;
     while (temp->GetNextNodeAddre()!=0) {
         if(temp->IsOutEidSort(eid)) return true;
@@ -514,7 +535,7 @@ bool Direct_multigraph::NodeIter::IsOutEidSort(const int &eid)const{
     }
     return temp->IsOutEid(eid);
 }
-void Direct_multigraph::NodeIter::SortEidV(){
+void Net::NodeIter::SortEidV(){
     Node* temp=CurNode;
     while(temp->GetNextNodeAddre()!=0){
         temp->SortInEidV();
@@ -524,7 +545,7 @@ void Direct_multigraph::NodeIter::SortEidV(){
     temp->SortInEidV();
     temp->SortOutEidV();
 }
-int Direct_multigraph::NodeIter::GetInEid(const int edgeN)const{
+int Net::NodeIter::GetInEid(const int edgeN)const{
     int n=edgeN;
     Node* temp=CurNode;
     while(n>temp->GetInDeg() && temp->GetNextNodeAddre()!=0){
@@ -534,7 +555,7 @@ int Direct_multigraph::NodeIter::GetInEid(const int edgeN)const{
     if(n>temp->GetInDeg()) return -1;
     return temp->GetInEid(n-1);
 }
-int Direct_multigraph::NodeIter::GetOutEid(const int edgeN)const{
+int Net::NodeIter::GetOutEid(const int edgeN)const{
     int n=edgeN;
     Node* temp=CurNode;
     while (n>temp->GetOutDeg()&& temp->GetNextNodeAddre()!=0) {
@@ -544,7 +565,7 @@ int Direct_multigraph::NodeIter::GetOutEid(const int edgeN)const{
     if(n>temp->GetOutDeg()) return -1;
     return temp->GetOutEid(n-1);
 }
-int Direct_multigraph::NodeIter::GetNbrEid(const int &edgeN)const{
+int Net::NodeIter::GetNbrEid(const int &edgeN)const{
     int n=edgeN;
     Node* temp=CurNode;
     while (n>temp->GetDeg()&& temp->GetNextNodeAddre()!=0) {
@@ -554,18 +575,18 @@ int Direct_multigraph::NodeIter::GetNbrEid(const int &edgeN)const{
     if(n>temp->GetDeg()) return -1;
     return temp->GetNbrEid(n-1);
 }
-int Direct_multigraph::NodeIter::GetInNid(const int &edgeN)const{
+int Net::NodeIter::GetInNid(const int &edgeN)const{
     return Graph->GetEI(GetInEid(edgeN)).GetSrcNid();
 }
-int Direct_multigraph::NodeIter::GetOutNid(const int &edgeN)const{
+int Net::NodeIter::GetOutNid(const int &edgeN)const{
     return Graph->GetEI(edgeN).GetDstNid();
 }
-int Direct_multigraph::NodeIter::GetNbrNid(const int &edgeN)const{
+int Net::NodeIter::GetNbrNid(const int &edgeN)const{
     int eid=GetNbrEid(edgeN);
     if(edgeN<=GetInDeg()){return Graph->GetEI(eid).GetSrcNid();}
     else return Graph->GetEI(eid).GetDstNid();
 }
-int Direct_multigraph::AddNode(int Nid,const char* data){
+int Net::AddNode(int Nid,const char* data){
     if(Nid==-1){Nid=MxNid;MxNid++;}
     else{
         if(IsNode(Nid)) return -1;
@@ -587,7 +608,7 @@ int Direct_multigraph::AddNode(int Nid,const char* data){
     NodeNum++;
     return  Nid;
 }
-Direct_multigraph::Node* Direct_multigraph::AddExistNode(const int &nid, const int &flag){
+Net::Node* Net::AddExistNode(const int &nid, const int &flag){
     Node* node;
     if(FreeNodeNum>0){
         uint64_t location=FreeNodeLocation;
@@ -600,14 +621,14 @@ Direct_multigraph::Node* Direct_multigraph::AddExistNode(const int &nid, const i
     }
     return node;
 }
-void Direct_multigraph::DelNodeOfLocation(const uint64_t &location){
+void Net::DelNodeOfLocation(const uint64_t &location){
     Node* DelNode=GetNodePtr(location);
     DelNode->SetNextNodeAddre(FreeNodeLocation);
     DelNode->SetFlag(-1);
     FreeNodeLocation=location;
     FreeNodeNum++;
 }
-void Direct_multigraph::DelNode(const int &Nid){
+void Net::DelNode(const int &Nid){
     uint64_t location;
     if(!NodeHash.Find(Nid, location)) return;
     Node* temp=GetNodePtr(location);
@@ -617,19 +638,29 @@ void Direct_multigraph::DelNode(const int &Nid){
             Edge* CurEdge=DelEidOfTable(Eid);
             if(CurEdge!=NULL){
                 uint64_t location2;
-               if( NodeHash.Find(CurEdge->GetDstNid(), location2))
-                   DelInEidOfNode(location2, Eid);
+               if( NodeHash.Find(CurEdge->GetSrcNid(), location2))
+                   DelOutEidOfNode(location2, Eid);
             }
+        }
+            for(int i=0;i<temp->GetOutDeg();++i){
+                int Eid=temp->GetOutEid(i);
+                Edge* CurEdge=DelEidOfTable(Eid);
+                if(CurEdge!=NULL){
+                    uint64_t location2;
+                   if( NodeHash.Find(CurEdge->GetDstNid(), location2))
+                       DelInEidOfNode(location2, Eid);
+                }
         }
         uint64_t old=location;
         location=temp->GetNextNodeAddre();
         temp=GetNodePtr(location);
         DelNodeOfLocation(old);
     } while (temp->GetNextNodeAddre()!=0);
+    AttrN.DelAttrDat(Nid);
     NodeHash.Delete(Nid);
     NodeNum--;
 }
-void Direct_multigraph::DelInEidOfNode(const uint64_t &location, const int &Eid){
+void Net::DelInEidOfNode(const uint64_t &location, const int &Eid){
     Node* CurNode=GetNodePtr(location);
     Node* PrevNode=CurNode;
     while(!CurNode->DeleteInEid(Eid) && CurNode->GetNextNodeAddre()!=0){
@@ -641,7 +672,7 @@ void Direct_multigraph::DelInEidOfNode(const uint64_t &location, const int &Eid)
         DelNodeOfLocation(GetNodeLocation(CurNode));
     }
 }
-void Direct_multigraph::DelOutEidOfNode(const uint64_t &location, const int &Eid){
+void Net::DelOutEidOfNode(const uint64_t &location, const int &Eid){
     Node* CurNode=GetNodePtr(location);
     Node* PrevNode=CurNode;
     while (!CurNode->DeleteOutEid(Eid) && CurNode->GetNextNodeAddre()!=0) {
@@ -653,7 +684,7 @@ void Direct_multigraph::DelOutEidOfNode(const uint64_t &location, const int &Eid
         DelNodeOfLocation(GetNodeLocation(CurNode));
     }
 }
-Direct_multigraph::Edge* Direct_multigraph::DelEidOfTable(const int &Eid){
+Net::Edge* Net::DelEidOfTable(const int &Eid){
     uint64_t location;
     if(EdgeHash.Find(Eid, location)){
         Edge* DelEdge=GetEdgePtr(location);
@@ -668,7 +699,7 @@ Direct_multigraph::Edge* Direct_multigraph::DelEidOfTable(const int &Eid){
     return NULL;
 }
 
-void Direct_multigraph::DelEdge(const int &Eid){
+void Net::DelEdge(const int &Eid){
     Edge* CurEdge=DelEidOfTable(Eid);
     if(CurEdge==NULL) return;
     int SrcNid=CurEdge->GetSrcNid();
@@ -677,8 +708,9 @@ void Direct_multigraph::DelEdge(const int &Eid){
     if(!NodeHash.Find(SrcNid, location1) || NodeHash.Find(DstNid, location2)) return;
     DelOutEidOfNode(location1, Eid);
     DelInEidOfNode(location2, Eid);
+    AttrE.DelAttrDat(Eid);
 }
-void Direct_multigraph::DelEdge(const int &SrcNid, const int &DstNid){
+void Net::DelEdge(const int &SrcNid, const int &DstNid){
     uint64_t location1,location2;
     if(!NodeHash.Find(SrcNid, location1) ||!NodeHash.Find(DstNid, location2)) return;
     Node* SrcNode=GetNodePtr(location1);
@@ -706,10 +738,11 @@ void Direct_multigraph::DelEdge(const int &SrcNid, const int &DstNid){
     if(Eid!=-1){
         DelInEidOfNode(location2, Eid);
         DelEidOfTable(Eid);
+        AttrE.DelAttrDat(Eid);
     }
 }
 
-bool Direct_multigraph::IsEdge(const int &SrcNid, const int &DstNid, int &Eid)const{
+bool Net::IsEdge(const int &SrcNid, const int &DstNid, int &Eid)const{
     uint64_t location1,location2;
     if(!NodeHash.Find(SrcNid, location1) ||!NodeHash.Find(DstNid, location2)) return false;
     Node* SrcNode=GetNodePtr(location1);
@@ -730,7 +763,7 @@ bool Direct_multigraph::IsEdge(const int &SrcNid, const int &DstNid, int &Eid)co
     Eid=-1;
     return false;
 }
-void Direct_multigraph::AddInEidOfNode(const uint64_t &location, const int &Eid){
+void Net::AddInEidOfNode(const uint64_t &location, const int &Eid){
     Node* temp=GetNodePtr(location);
     while (temp->GetNextNodeAddre()!=0) {
         if(temp->AddInEid(Eid)) return;
@@ -741,7 +774,7 @@ void Direct_multigraph::AddInEidOfNode(const uint64_t &location, const int &Eid)
     NewNode->AddInEid(Eid);
     temp->SetNextNodeAddre(GetNodeLocation(NewNode));
 }
-void Direct_multigraph::AddOutEidOfNode(const uint64_t &location, const int &Eid){
+void Net::AddOutEidOfNode(const uint64_t &location, const int &Eid){
     Node* temp=GetNodePtr(location);
     while (temp->GetNextNodeAddre()!=0) {
         if(temp->AddOutEid(Eid)) return;
@@ -752,7 +785,7 @@ void Direct_multigraph::AddOutEidOfNode(const uint64_t &location, const int &Eid
     NewNode->AddOutEid(Eid);
     temp->SetNextNodeAddre(GetNodeLocation(NewNode));
 }
-void Direct_multigraph::AddEdgeToTable(const int &SrcNid, const int &DstNid,const char* Data,int Eid){
+void Net::AddEdgeToTable(const int &SrcNid, const int &DstNid,const char* Data,int Eid){
     Edge* NewEdge;
     if(FreeEdgeNum>0){
         char* edge=EdgeTable->HeadPtr()+FreeEdgeLocation;
@@ -763,7 +796,7 @@ void Direct_multigraph::AddEdgeToTable(const int &SrcNid, const int &DstNid,cons
     else NewEdge=new(EdgeTable) Edge(Eid,SrcNid,DstNid,Data);
     EdgeHash.Add(Eid, GetEdgeLocation(NewEdge));
 }
-int Direct_multigraph::AddEdge(const int &SrcNid, const int &DstNid,const char* Data,int Eid){
+int Net::AddEdge(const int &SrcNid, const int &DstNid,const char* Data,int Eid){
     if(Eid==-1){
         Eid=MxEid;
         MxEid++;
@@ -780,7 +813,7 @@ int Direct_multigraph::AddEdge(const int &SrcNid, const int &DstNid,const char* 
     EdgeNum++;
     return Eid;
 }
-int Direct_multigraph::AddEdge2(const int &SrcNid, const int &DstNid,const char* Data,int Eid){
+int Net::AddEdge2(const int &SrcNid, const int &DstNid,const char* Data,int Eid){
     if(Eid==-1){
         Eid=MxEid;
         MxEid++;
@@ -805,14 +838,14 @@ int Direct_multigraph::AddEdge2(const int &SrcNid, const int &DstNid,const char*
     return Eid;
 }
 
-inline const char* Direct_multigraph::GetNData(const int &Nid)const{
+inline const char* Net::GetNData(const int &Nid)const{
     uint64_t location;
     if(NodeHash.Find(Nid, location)){
         return GetNodePtr(location)->GetData();
     }
     return NULL;
 }
-inline const char* Direct_multigraph::GetEData(const int &Eid)const{
+inline const char* Net::GetEData(const int &Eid)const{
     uint64_t location;
     if(EdgeHash.Find(Eid, location)){
         return GetEdgePtr(location)->GetData();
@@ -820,20 +853,94 @@ inline const char* Direct_multigraph::GetEData(const int &Eid)const{
     return NULL;
 }
 
-void Direct_multigraph::SetNData(const int &Nid,const char* Data){
+void Net::SetNData(const int &Nid,const char* Data){
     uint64_t location;
     if(NodeHash.Find(Nid, location)){
         GetNodePtr(location)->SetData(Data);
     }
 }
-void Direct_multigraph::SetEData(const int &Eid, const char *Data){
+void Net::SetEData(const int &Eid, const char *Data){
     uint64_t location;
     if(EdgeHash.Find(Eid, location)){
         GetEdgePtr(location)->SetData(Data);
     }
 }
 
+bool Net::AddAttrDatN(const int& Nid,const int& AttrId,const char* Val){
+    if(!IsNode(Nid)) return false;
+   return AttrN.AddAttrDat(Nid,AttrId,Val);
+}
+bool Net::AddAttrDatN(const int& Nid,const char* AttrName,const char* Val){
+    if(!IsNode(Nid)) return false;
+    return AttrN.AddAttrDat(Nid,AttrName,Val);
+}
+bool Net::GetAttrDatN(const int& Nid,const int& AttrId,char* Val)const{
+    if(!IsNode(Nid)) return false;
+    return AttrN.GetAttrDat(Nid,AttrId,val);
+}
+bool Net::GetAttrDatN(const int& Nid,const char* AttrName,char* Val)const{
+    if(!IsNode(Nid)) return false;
+    return AttrN.GetAttrDat(Nid,AttrName,Val);
+}
+void Net::DelAttrDatN(const int& Nid,const int& AttrId){
+    if(!IsNode(Nid)) return;
+    AttrN.DelAttrDat(Nid,AttrId);
+}
+void Net::DelAttrDatN(const int& Nid,const char* AttrName){
+    if(!IsNode(Nid)) return;
+    AttrN.DelAttrDat(Nid,AttrName);
+}
+void Net::DelAttrDatN(const int& Nid){
+    if(!IsNode(Nid)) return false;
+    AttrN.DelAttrDat(Nid);
+}
+int Net::AddAttrNameN(const char* AttrName){
+    return AttrN.AddAttrName(AttrName);
+}
+bool Net::GetAttrIdN(int& AttrId,const char* AttrName)const{
+    return AttrN.GetAttrId(AttrId,AttrName);
+}
+bool Net::GetAttrNameN(const int& AttrId,char* AttrName)const{
+    return AttrN.GetAttrName(AttrId,AttrName);
+}
+
+bool Net::AddAttrDatE(const int& Eid,const int& AttrId,const char* Val){
+    if(!IsEdge(Eid)) return false;
+    return AttrE.AddAttrDat(Eid,AttrId,Val);
+}
+bool Net::AddAttrDatE(const int& Eid,const char* AttrName,const char* Val){
+    if(!IsEdge(Eid)) return false;
+    return AttrE.AddAttrDat(Eid,AttrName,Val);
+}
+bool Net::GetAttrDatE(const int& Eid,const int& AttrId,char* Val)const{
+    if(!IsEdge(Eid)) return false;
+    return AttrE.GetAttrDat(Eid,AttrId,val);
+}
+bool Net::GetAttrDatE(const int& Eid,const char* AttrName,char* Val)const{
+    if(!IsEdge(Eid)) return false;
+    return AttrE.GetAttrDat(Eid,AttrName,Val);
+}
+void Net::DelAttrDatE(const int& Eid,const int& AttrId){
+    if(!IsEdge(Eid)) return false;
+    AttrE.DelAttrDat(Eid,AttrId);
+}
+void Net::DelAttrDatE(const int& Eid,const char* AttrName){
+    if(!IsEdge(Eid)) return false;
+    AttrE.DelAttrDat(Eid,AttrName);
+}
+void Net::DelAttrDatE(const int& Eid){
+    if(!IsEdge(Eid)) return false;
+    AttrE.DelAttrDat(Nid);
+}
+int Net::AddAttrNameE(const char* AttrName){
+    return AttrE.AddAttrName(AttrName);
+}
+bool Net::GetAttrIdE(int& AttrId,const char* AttrName)const{
+    return AttrE.GetAttrId(AttrId,AttrName);
+}
+bool Net::GetAttrNameE(const int& AttrId,char* AttrName)const{
+    return AttrE.GetAttrName(AttrId,AttrName);
+}
 
 
-
-#endif /* Direct_multigraph_h */
+#endif /* network_h */
