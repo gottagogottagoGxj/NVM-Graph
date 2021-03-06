@@ -29,6 +29,7 @@
 		1D6F6B642574F13700941275 /* Direct_graph.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Direct_graph.h; sourceTree = "<group>"; };
 		1D78498E259333E80068AE37 /* NVMSkiplist.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = NVMSkiplist.h; sourceTree = "<group>"; };
 		1D8262B72563DB1300F7953C /* Arena.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Arena.h; sourceTree = "<group>"; };
+		1D83390025F350DB00E94941 /* BFS.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = BFS.h; sourceTree = "<group>"; };
 		1D86CD51254058C700E3ADC7 /* NVM-Graph */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = "NVM-Graph"; sourceTree = BUILT_PRODUCTS_DIR; };
 		1D86CD54254058C700E3ADC7 /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
 		1D86CD5C25405CC500E3ADC7 /* UNDerict_Graph.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = UNDerict_Graph.h; sourceTree = "<group>"; };
@@ -91,6 +92,7 @@
 				1DDD74A1259B10E400EC8EFA /* Attr.h */,
 				1D8BB76425A4092A00754408 /* network.h */,
 				1D8BB76625A54E7C00754408 /* network.cpp */,
+				1D83390025F350DB00E94941 /* BFS.h */,
 			);
 			path = "NVM-Graph";
 			sourceTree = "<group>";

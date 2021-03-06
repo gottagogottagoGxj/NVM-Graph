@@ -138,36 +138,36 @@ public:
         }
         static void operator delete(void* p,char* start){}
     };
-    class NvmNodeI{
+    class NodeIter{
     private:
         NvmNode* Begin;
         NvmNode* CurNode;
         const char* End;
     public:
-        NvmNodeI():Begin(NULL),CurNode(NULL),End(NULL){}
-        NvmNodeI(NvmNode* begin,NvmNode* node,const char* end):Begin(begin),CurNode(node),End(end){}
-        NvmNodeI(const NvmNodeI& nodeI):Begin(nodeI.Begin),CurNode(nodeI.CurNode),End(nodeI.End){}
-        NvmNodeI& operator= (const NvmNodeI& nodeI){
+        NodeIter():Begin(NULL),CurNode(NULL),End(NULL){}
+        NodeIter(NvmNode* begin,NvmNode* node,const char* end):Begin(begin),CurNode(node),End(end){}
+        NodeIter(const NodeIter& nodeI):Begin(nodeI.Begin),CurNode(nodeI.CurNode),End(nodeI.End){}
+        NodeIter& operator= (const NodeIter& nodeI){
             Begin=nodeI.Begin;
             CurNode=nodeI.CurNode;
             End=nodeI.End;
             return *this;
         }
-        NvmNodeI& operator++(int){
+        NodeIter& operator++(int){
             char* cur=(char*)CurNode;
             if(cur>=End) return *this;
             CurNode++;
             while((char*)CurNode<End && CurNode->GetFlag()<=0) CurNode++;
             return *this;
         }
-        NvmNodeI& operator--(int){
+        NodeIter& operator--(int){
             if(CurNode<=Begin) return *this;
             CurNode--;
             while(CurNode>Begin && CurNode->GetFlag()<=0) CurNode--;
             return *this;
         }
-        bool operator<(const NvmNodeI& nodeI)const{return CurNode<nodeI.CurNode;}
-        bool operator==(const NvmNodeI& nodeI)const{return CurNode==nodeI.CurNode;}
+        bool operator<(const NodeIter& nodeI)const{return CurNode<nodeI.CurNode;}
+        bool operator==(const NodeIter& nodeI)const{return CurNode==nodeI.CurNode;}
         NvmNode& operator*()const{return *CurNode;}
         NvmNode& operator()()const{return *CurNode;}
         NvmNode& operator->()const{return *CurNode;}
@@ -270,23 +270,23 @@ public:
         bool IsBegin()const{return CurNode==Begin;}
         bool IsEnd()const{return (char*)CurNode==End;}
     };
-    class EdgeI{
+    class EdgeIter{
     private:
-        NvmNodeI CurNode;
+        NodeIter CurNode;
         int CurEdge;
     public:
-        EdgeI():CurNode(),CurEdge(0){}
-        EdgeI(const NvmNodeI& node,const int& edge):CurNode(node),CurEdge(edge){}
-        EdgeI(const EdgeI& edgei):CurNode(edgei.CurNode),CurEdge(edgei.CurEdge){}
-        EdgeI& operator=(const EdgeI& edgei){
+        EdgeIter():CurNode(),CurEdge(0){}
+        EdgeIter(const NodeIter& node,const int& edge):CurNode(node),CurEdge(edge){}
+        EdgeIter(const EdgeIter& edgeIter):CurNode(edgeIter.CurNode),CurEdge(edgeIter.CurEdge){}
+        EdgeIter& operator=(const EdgeIter& edgei){
             if(this!=&edgei){
                 CurNode=edgei.CurNode;
                 CurEdge=edgei.CurEdge;
             }
             return *this;
         }
-        bool operator==(const EdgeI& edgei) const{return CurNode==edgei.CurNode && CurEdge==edgei.CurEdge;}
-        EdgeI& operator++(int){
+        bool operator==(const EdgeIter& edgei) const{return CurNode==edgei.CurNode && CurEdge==edgei.CurEdge;}
+        EdgeIter& operator++(int){
             do{
                 CurEdge++;
                 if(CurEdge>CurNode.GetOutDeg()){
@@ -297,7 +297,7 @@ public:
             }while(!CurNode.IsEnd() && GetSrcNid()>GetDstNid());
             return *this;
         }
-        bool operator<(const EdgeI& edgei)const{
+        bool operator<(const EdgeIter& edgei)const{
             return CurNode<edgei.CurNode||(CurNode==edgei.CurNode && CurEdge<edgei.CurEdge);
         }
         int GetSrcNid()const{return CurNode.GetId();}
@@ -340,19 +340,19 @@ public:
     void DelNode(const int& nid);
     void DelNode(const NvmNode& node){DelNode(node.GetId());}
     int GetMxNid()const{return MxNid;}
-    NvmNodeI BegNI()const{return NvmNodeI(HeadNode,HeadNode,NodeTable->EndPtr())++;}
-    NvmNodeI GetNI(const int& nid)const{
+    NodeIter BegNI()const{return NodeIter(HeadNode,HeadNode,NodeTable->EndPtr())++;}
+    NodeIter GetNI(const int& nid)const{
         NvmNode* curnode;
         uint64_t location;
         if(NodeHash.Find(nid, location)){
             curnode=GetNodePtr(location);
         }
         else curnode=NULL;
-        return NvmNodeI(HeadNode, curnode, NodeTable->EndPtr());
+        return NodeIter(HeadNode, curnode, NodeTable->EndPtr());
     }
-    NvmNodeI EndNI()const{
+    NodeIter EndNI()const{
         NvmNode* curnode=GetNodePtr(NodeTable->EndPtr()-NodeTable->BeginPtr());
-        return NvmNodeI(HeadNode, curnode, NodeTable->EndPtr());
+        return NodeIter(HeadNode, curnode, NodeTable->EndPtr());
     }
     
     bool IsEdge(const int& SrcNid,const int& DstNid)const{
@@ -365,14 +365,14 @@ public:
     int AddEdge2(const int& SrcNid,const int& DstNid);
     void DelEdge(const int& SrcNid,const int& DstNid);
     int GetEdgeNum()const{return EdgeNum;}
-    EdgeI BegEI()const{
-        NvmNodeI beginNI=BegNI();
-        EdgeI beginEI=EdgeI(beginNI,1);
+    EdgeIter BegEI()const{
+        NodeIter beginNI=BegNI();
+        EdgeIter beginEI=EdgeIter(beginNI,1);
         if(GetNodeNum()!=0 && !beginEI.IsEnd() && (beginNI.GetOutDeg()==0 || beginEI.GetSrcNid()>beginEI.GetDstNid())){beginEI++;}
         return  beginEI;
     }
-    EdgeI GetEI(const NvmNodeI& nodeI,const int& edge)const{return EdgeI(nodeI,edge);}
-    EdgeI EndEI()const{return EdgeI(EndNI(),1);}
+    EdgeIter GetEI(const NodeIter& nodeI,const int& edge)const{return EdgeIter(nodeI,edge);}
+    EdgeIter EndEI()const{return EdgeIter(EndNI(),1);}
 };
 
 

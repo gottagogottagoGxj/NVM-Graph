@@ -53,7 +53,7 @@ class Comparator{
 private:
     bool Asc;
 public:
-    Comparator(const bool& asc=true):Asc(asc){}
+    Comparator(const bool& asc=true):Asc(asc){}//Asc默认为真，降序排序，key1>key2返回1，key1<key2返回-1,相等返回0
     int operator()(const Key& key1,const Key& key2)const{
         if(Asc){
             if(key1.Nid>key2.Nid) return 1;
@@ -66,6 +66,47 @@ public:
             if(key1.Nid<key2.Nid) return 1;
             if(key1.AttrId>key2.AttrId) return -1;
             if(key1.AttrId<key2.AttrId) return 1;
+        }
+        return 0;
+    }
+};
+
+class AttrEdgeIndexKey{
+public:
+    int SrcNid,DstNid,AttrId;
+    size_t Location;
+    AttrEdgeIndexKey(){}
+    AttrEdgeIndexKey(const int& SrcNode,const int& DstNode,const int& Attrid):SrcNid(SrcNode),DstNid(DstNode),AttrId(Attrid),Location(0){}
+    AttrEdgeIndexKey& operator=(const AttrEdgeIndexKey& key){
+        SrcNid=key.SrcNid;
+        DstNid=key.DstNid;
+        AttrId=key.AttrId;
+        Location=key.Location;
+        return *this;
+    }
+};
+template<class Key>
+class ComparatorEdge{
+private:
+    bool Asc;
+public:
+    ComparatorEdge(const bool& asc=true):Asc(asc){}
+    int operator()(const Key& key1,const Key& key2)const{
+        if(Asc){
+            if(key1.SrcNid>key2.SrcNid) return 1;
+            if(key1.SrcNid<key2.SrcNid) return -1;
+            if(key1.DstNid>key2.DstNid) return 1;
+            if(key1.DstNid<key2.DstNid) return -1;
+            if(key1.Attrid>key2.Attrid) return 1;
+            if(key1.Attrid<key2.attrid) return -1;
+        }
+        else{
+            if(key1.SrcNid>key2.SrcNid) return -1;
+            if(key1.SrcNid<key2.SrcNid) return 1;
+            if(key1.DstNid>key2.DstNid) return -1;
+            if(key1.DstNid<key2.DstNid) return 1;
+            if(key1.Attrid>key2.Attrid) return -1;
+            if(key1.Attrid<key2.attrid) return 1;
         }
         return 0;
     }

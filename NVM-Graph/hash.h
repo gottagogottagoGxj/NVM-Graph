@@ -318,6 +318,12 @@ public:
     size_t GetSlotNumPerBucket()const{return slot_per_bucket;}
     size_t GetValidSlotNum()const{return ValidSlotNum;}
     size_t GetSize()const{return table->GetSize();}
+    void Clear(){
+        for(int i=0;i<BucketNum;++i){
+            for(int j=0;j<slot_per_bucket;++j)
+            table->ClearSlot(i, j);
+        }
+    }
     
 };
 template<class Key,class Dat>
