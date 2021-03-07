@@ -179,11 +179,11 @@ public:
     }
     bool AddAttrDat(const int& SrcNid,const int& DstNid,const char* AttrName,const char* Val);//若AttrName不存在返回false,若该属性已存在，返回false
     bool AddAttrDat(const int& SrcNid,const int& DstNid,const int& AttrId,const char* Val);
-    bool GetAttrDat(const int& Id,const char* AttrName,char* Val) const;
-    bool GetAttrDat(const int& Id,const int& AttrId,char* Val)const;
-    void DelAttrDat(const int& Id,const char* AttrName);
-    void DelAttrDat(const int& Id,const int& AttrId);
-    void DelAttrDat(const int& Id);
+    bool GetAttrDat(const int& SrcNid,const int& DstNid,const char* AttrName,char* Val) const;
+    bool GetAttrDat(const int& SrcNid,const int& DstNid,const int& AttrId,char* Val)const;
+    void DelAttrDat(const int& SrcNid,const int& DstNid,const char* AttrName);
+    void DelAttrDat(const int& SrcNid,const int& DstNid,const int& AttrId);
+    void DelAttrDat(const int& SrcNid,const int& DstNid);
     int AddAttrName(const char* AttrName);
     bool GetAttrId(int& AttrId,const char* AttrName)const;
     bool GetAttrName(const int& AttrId,char* AttrName)const;
@@ -210,15 +210,15 @@ bool AttrPair::AddAttrDat(const int& SrcNid,const int& DstNid,const int& AttrId,
     AttrIndex.Insert(indexkey);
     return true;
 }
-bool AttrPair::GetAttrDat(const int &Id, const char *AttrName, char *Val)const{
+bool AttrPair::GetAttrDat(const int &SrcNid,const int& DstNid, const char *AttrName, char *Val)const{
     int AttrId;
     if(!AttrNameToId.Find(AttrName, strlen(AttrName), AttrId)) return false;
-    return GetAttrDat(Id, AttrId, Val);
+    return GetAttrDat(SrcNid,DstNid, AttrId, Val);
 }
-bool AttrPair::GetAttrDat(const int &Id, const int &AttrId, char *Val)const{
+bool AttrPair::GetAttrDat(const int &SrcNid, const int& DstNid, const int &AttrId, char *Val)const{
     size_t location;
     if(!AttrIdToName.Find(AttrId, sizeof(int), location)) return false;
-    AttrIndexKey indexkey(Id,AttrId);
+    AttrEdgeIndexKey indexkey(SrcNid,DstNid,AttrId);
     if(!AttrIndex.Find(indexkey)) return false;
     MOut NVMout(AttrTable->HeadPtr()+indexkey.Location,AttrTable->EndPtr()-AttrTable->BeginPtr()-indexkey.Location);
     int length;
@@ -226,22 +226,22 @@ bool AttrPair::GetAttrDat(const int &Id, const int &AttrId, char *Val)const{
     NVMout.Load(Val, length);
     return true;
 }
-void AttrPair::DelAttrDat(const int &Id, const char *AttrName){
+void AttrPair::DelAttrDat(const int& SrcNid,const int& DstNid, const char *AttrName){
     int AttrId;
     if(AttrNameToId.Find(AttrName, strlen(AttrName), AttrId)){
-        DelAttrDat(Id, AttrId);
+        DelAttrDat(SrcNid,DstNid, AttrId);
     }
 }
-void AttrPair::DelAttrDat(const int &Id, const int &AttrId){
-    AttrIndexKey indexkey(Id,AttrId);
+void AttrPair::DelAttrDat(const int &SrcNid,const int& DstNid, const int &AttrId){
+    AttrEdgeIndexKey indexkey(SrcNid,DstNid,AttrId);
     AttrIndex.Delete(indexkey);
 }
-void AttrPair::DelAttrDat(const int &Id){
-    AttrIndexKey MinKey(Id,0),MaxKey(Id,MxAttrId);
+void AttrPair::DelAttrDat(const int &SrcNid,const int& DstNid){
+    AttrEdgeIndexKey MinKey(SrcNid,DstNid,0),MaxKey(SrcNid,DstNid,MxAttrId);
     AttrIndex.Delete(MinKey, MaxKey);
 }
 
-int Attr::AddAttrName(const char *AttrName){
+int AttrPair::AddAttrName(const char *AttrName){
     int AttrId=MxAttrId;
     MxAttrId++;
     int namelength=strlen(AttrName);
@@ -258,11 +258,11 @@ int Attr::AddAttrName(const char *AttrName){
     return AttrId;
 }
 
-bool Attr::GetAttrId(int& AttrId,const char *AttrName)const{
+bool AttrPair::GetAttrId(int& AttrId,const char *AttrName)const{
     if(!AttrNameToId.Find(AttrName, strlen(AttrName), AttrId)) return false;
     return true;
 }
-bool Attr::GetAttrName(const int &AttrId, char *AttrName)const{
+bool AttrPair::GetAttrName(const int &AttrId, char *AttrName)const{
     size_t offset;
     if(!AttrIdToName.Find(AttrId, sizeof(int), offset)) return false;
     const char* curptr=NameTable->HeadPtr()+offset;

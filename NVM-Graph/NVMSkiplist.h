@@ -76,6 +76,7 @@ public:
     int SrcNid,DstNid,AttrId;
     size_t Location;
     AttrEdgeIndexKey(){}
+    AttrEdgeIndexKey(const int& SrcNode,const int& DstNode,const int& Attrid,const size_t& location):SrcNid(SrcNode),DstNid(DstNode),AttrId(Attrid),Location(location){}
     AttrEdgeIndexKey(const int& SrcNode,const int& DstNode,const int& Attrid):SrcNid(SrcNode),DstNid(DstNode),AttrId(Attrid),Location(0){}
     AttrEdgeIndexKey& operator=(const AttrEdgeIndexKey& key){
         SrcNid=key.SrcNid;
@@ -302,10 +303,10 @@ void NVMSkipList<Key,Comparator>::Delete(const Key &MinKey, const Key &MaxKey){
         size_t tempoffset=prev[i]->Next(i);
         Node* temp=GetNodePtr(tempoffset);
         while(tempoffset!=0 && Compare(temp->key,MaxKey)<=0){
-            prev[i]->SetNext(i,temp->Next(i));
             tempoffset=prev[i]->Next(i);
             temp=GetNodePtr(tempoffset);
         }
+        prev[i]->SetNext(i,GetNodeOffset(temp));
     }
 }
 
