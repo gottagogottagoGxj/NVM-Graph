@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		1D336F0525F4C1B400DEA8D3 /* Property_Graph.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1D336F0325F4C1B400DEA8D3 /* Property_Graph.cpp */; };
 		1D86CD55254058C700E3ADC7 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1D86CD54254058C700E3ADC7 /* main.cpp */; };
 		1D8BB76725A54E7C00754408 /* network.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1D8BB76625A54E7C00754408 /* network.cpp */; };
 		1DA90E4525870615005F4F48 /* Direct_multigraph.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1DA90E4425870615005F4F48 /* Direct_multigraph.cpp */; };
@@ -26,6 +27,8 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		1D336F0225F4BAFF00DEA8D3 /* Property_Graph.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Property_Graph.h; sourceTree = "<group>"; };
+		1D336F0325F4C1B400DEA8D3 /* Property_Graph.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Property_Graph.cpp; sourceTree = "<group>"; };
 		1D6F6B642574F13700941275 /* Direct_graph.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Direct_graph.h; sourceTree = "<group>"; };
 		1D78498E259333E80068AE37 /* NVMSkiplist.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = NVMSkiplist.h; sourceTree = "<group>"; };
 		1D8262B72563DB1300F7953C /* Arena.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Arena.h; sourceTree = "<group>"; };
@@ -93,6 +96,8 @@
 				1D8BB76425A4092A00754408 /* network.h */,
 				1D8BB76625A54E7C00754408 /* network.cpp */,
 				1D83390025F350DB00E94941 /* BFS.h */,
+				1D336F0225F4BAFF00DEA8D3 /* Property_Graph.h */,
+				1D336F0325F4C1B400DEA8D3 /* Property_Graph.cpp */,
 			);
 			path = "NVM-Graph";
 			sourceTree = "<group>";
@@ -154,6 +159,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				1D86CD55254058C700E3ADC7 /* main.cpp in Sources */,
+				1D336F0525F4C1B400DEA8D3 /* Property_Graph.cpp in Sources */,
 				1DA90E4525870615005F4F48 /* Direct_multigraph.cpp in Sources */,
 				1D8BB76725A54E7C00754408 /* network.cpp in Sources */,
 				1DB8B02E2575F145003BD17C /* Derict_Graph.cpp in Sources */,

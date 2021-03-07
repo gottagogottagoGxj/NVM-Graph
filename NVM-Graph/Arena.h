@@ -95,7 +95,7 @@ public:
 };
 
 void InsertSortCmp(int Arr[],int Start,int End,const Comparison& Cmp);
-int PariitionCmp(int Arr[],int Start,int End,const Comparison& Cmp);
+int ParitionCmp(int Arr[],int Start,int End,const Comparison& Cmp);
 void QuickSortCmp(int Arr[],int Start,int End,const Comparison& Cmp);
 
 int SearchBin(const int Arr[],int Start,int End,const int& key,const Comparison& Cmp);
@@ -110,7 +110,7 @@ void InsertSortCmp(int Arr[],int Start,int End,const Comparison& Cmp){
         Arr[j]=value;
     }
 }
-int PariitionCmp(int Arr[],int Start,int End,const Comparison& Cmp){
+int ParitionCmp(int Arr[],int Start,int End,const Comparison& Cmp){
     int index=End-1;
     int key=Arr[index];
     End--;
@@ -134,7 +134,7 @@ void QuickSortCmp(int Arr[],int Start,int End,const Comparison& Cmp){
     if(Start+1<End){
         if(End-Start<20){InsertSortCmp(Arr, Start,End, Cmp);}
         else{
-            int splite=PariitionCmp(Arr, Start, End, Cmp);
+            int splite=ParitionCmp(Arr, Start, End, Cmp);
             QuickSortCmp(Arr, Start, splite, Cmp);
             QuickSortCmp(Arr, splite+1, End, Cmp);
         }
