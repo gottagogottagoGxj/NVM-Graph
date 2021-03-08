@@ -98,16 +98,16 @@ public:
             if(key1.SrcNid<key2.SrcNid) return -1;
             if(key1.DstNid>key2.DstNid) return 1;
             if(key1.DstNid<key2.DstNid) return -1;
-            if(key1.Attrid>key2.Attrid) return 1;
-            if(key1.Attrid<key2.attrid) return -1;
+            if(key1.AttrId>key2.AttrId) return 1;
+            if(key1.AttrId<key2.AttrId) return -1;
         }
         else{
             if(key1.SrcNid>key2.SrcNid) return -1;
             if(key1.SrcNid<key2.SrcNid) return 1;
             if(key1.DstNid>key2.DstNid) return -1;
             if(key1.DstNid<key2.DstNid) return 1;
-            if(key1.Attrid>key2.Attrid) return -1;
-            if(key1.Attrid<key2.attrid) return 1;
+            if(key1.AttrId>key2.AttrId) return -1;
+            if(key1.AttrId<key2.AttrId) return 1;
         }
         return 0;
     }

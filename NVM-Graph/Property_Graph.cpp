@@ -5,7 +5,7 @@
 //  Created by 江清月近人 on 2021/3/7.
 //
 
-#include "Property_Graph.h"
+/*#include "Property_Graph.h"
 
 inline Property_Graph::Node::Node(const int nid,const char* data):Nid(nid),InNidVNum(0),OutNidVNum(0),Flag(1),NextNode(0){
     size_t length=strlen(data);
@@ -446,3 +446,55 @@ void Property_Graph::SetNData(const int &Nid, const char *Data){
         GetNodePtr(location)->SetData(Data);
     }
 }
+bool Property_Graph::AddAttrDatN(const int &Nid, const int &AttrId, const char *Val){
+    if(!NidIsExist(Nid)) return false;
+    return AttrN.AddAttrDat(Nid, AttrId, Val);
+}
+bool Property_Graph::AddAttrDatN(const int &Nid, const char *AttrName, const char *Val){
+    if(NidIsExist(Nid)) return false;
+    return AttrN.AddAttrDat(Nid, AttrName, Val);
+}
+bool Property_Graph::GetAttrDatN(const int &Nid, const int &AttrId, char *Val)const{
+    if(NidIsExist(Nid)) return false;
+    return AttrN.GetAttrDat(Nid, AttrId, Val);
+}
+bool Property_Graph::GetAttrDatN(const int& Nid,const char* AttrName,char* Val)const{
+    if(!NidIsExist(Nid)) return false;
+    return AttrN.GetAttrDat(Nid, AttrName, Val);
+}
+void Property_Graph::DelAttrDatN(const int &Nid, const int &AttrId){
+    if(NidIsExist(Nid)){AttrN.DelAttrDat(Nid, AttrId);}
+}
+void Property_Graph::DelAttrDatN(const int &Nid, const char *AttrName){
+    if(NidIsExist(Nid)){AttrN.DelAttrDat(Nid, AttrName);}
+}
+void Property_Graph::DelAttrDatN(const int &Nid){
+    if(NidIsExist(Nid)){AttrN.DelAttrDat(Nid);}
+}
+
+bool Property_Graph::AddAttrDatE(const int &SrcNid, const int &DstNid, const int &AttrId, const char *Val){
+    if(!EdgeIsExist(SrcNid, DstNid)) return false;
+    return AttrE.AddAttrDat(SrcNid, DstNid, AttrId, Val);
+}
+bool Property_Graph::AddAttrDatE(const int &SrcNid, const int &DstNid, const char *AttrName, const char *Val){
+    if(!EdgeIsExist(SrcNid, DstNid)) return false;
+    return AttrE.AddAttrDat(SrcNid, DstNid, AttrName, Val);
+}
+bool Property_Graph::GetAttrDatE(const int &SrcNid, const int &DstNid, const int &AttrId, char *Val)const{
+    if(!EdgeIsExist(SrcNid, DstNid)) return false;
+    return AttrE.GetAttrDat(SrcNid, DstNid, AttrId, Val);
+}
+bool Property_Graph::GetAttrDatE(const int &SrcNid, const int &DstNid, const char *AttrName, char *Val)const{
+    if(!EdgeIsExist(SrcNid, DstNid)) return false;
+    return AttrE.GetAttrDat(SrcNid, DstNid, AttrName, Val);
+}
+void Property_Graph::DelAttrDatE(const int &SrcNid, const int &DstNid, const int &AttrId){
+    if(EdgeIsExist(SrcNid, DstNid)) AttrE.DelAttrDat(SrcNid, DstNid, AttrId);
+}
+void Property_Graph::DelAttrDatE(const int &SrcNid, const int &DstNid, const char *AttrName){
+    if(EdgeIsExist(SrcNid, DstNid)) AttrE.DelAttrDat(SrcNid, DstNid, AttrName);
+}
+void Property_Graph::DelAttrDatE(const int &SrcNid, const int &DstNid){
+    if(EdgeIsExist(SrcNid, DstNid)) AttrE.DelAttrDat(SrcNid, DstNid);
+}
+*/

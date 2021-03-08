@@ -15,30 +15,33 @@
 #include "Direct_graph.h"
 #include"Direct_multigraph.h"
 #include"network.h"
+#include"Property_Graph.h"
 using namespace std;
 
-
+void Property_Graph_Test();
 
 int main(){
-    Arena a(10),b(10),c(10),d(10),e(10),f(10),node(Net::GetNodeSize()),edge(Net::GetEdgeSize());
-    /*Attr attr(&a,&b,&c);
-    attr.AddAttrName("Name");
-    attr.AddAttrName("Age");
-    attr.AddAttrName("Sex");
-    attr.AddAttrDat(1, "Name", "WangTingting");
-    attr.AddAttrDat(1, "Age", "23");
-    attr.AddAttrDat(1, "Sex", "Female");
-    char data[100];
-    attr.GetAttrDat(1, "Name", data);
-    cout<<data<<endl;
-    attr.GetAttrDat(1, "Age", data);
-    cout<<data<<endl;
-    attr.GetAttrDat(1, "Sex", data);
-    cout<<data<<endl;
-    attr.DelAttrDat(1);
-    bool flag=attr.GetAttrDat(1, "Name", data);
-    cout<<flag<<endl;*/
-    Net net(&node,&edge,&a,&b,&c,&d,&e,&f);
     
+    Property_Graph_Test();
     return 0;
+}
+
+void Property_Graph_Test(){
+    int NodeSize=Property_Graph::GetNodeSize();
+    Arena NodeTable(NodeSize,NodeSize*10);
+    Arena AttrNameNTable(0,1024),AttrIndexNTable(0,1024),AttrValueTable(0,1024);
+    Arena AttrNameETable(0,1024),AttrIndexETable(0,1024);
+    Property_Graph Graph(&NodeTable,&AttrNameNTable,&AttrIndexNTable,&AttrValueTable,&AttrNameETable,&AttrIndexETable,&AttrValueTable);
+    for(int i=0;i<7;++i) Graph.AddNode();
+    auto iter=Graph.BegNI();
+    while(!iter.IsEnd()){
+        cout<<iter.GetId()<<":"<<iter.GetData()<<endl;
+        cout<<"InDeg:"<<iter.GetInDeg()<<","<<"OutDeg:"<<iter.GetOutDeg()<<endl;
+        for(int i=0;i<iter.GetInDeg();++i) cout<<iter.GetInNid(i)<<" ";
+        cout<<endl;
+        for(int i=0;i<iter.GetOutDeg();++i) cout<<iter.GetOutNid(i)<<" ";
+        cout<<endl;
+        
+    }
+    
 }

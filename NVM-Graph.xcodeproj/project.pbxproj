@@ -29,6 +29,7 @@
 /* Begin PBXFileReference section */
 		1D336F0225F4BAFF00DEA8D3 /* Property_Graph.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Property_Graph.h; sourceTree = "<group>"; };
 		1D336F0325F4C1B400DEA8D3 /* Property_Graph.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Property_Graph.cpp; sourceTree = "<group>"; };
+		1D336F0825F5F4E200DEA8D3 /* Dijkstra.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Dijkstra.h; sourceTree = "<group>"; };
 		1D6F6B642574F13700941275 /* Direct_graph.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Direct_graph.h; sourceTree = "<group>"; };
 		1D78498E259333E80068AE37 /* NVMSkiplist.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = NVMSkiplist.h; sourceTree = "<group>"; };
 		1D8262B72563DB1300F7953C /* Arena.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Arena.h; sourceTree = "<group>"; };
@@ -98,6 +99,7 @@
 				1D83390025F350DB00E94941 /* BFS.h */,
 				1D336F0225F4BAFF00DEA8D3 /* Property_Graph.h */,
 				1D336F0325F4C1B400DEA8D3 /* Property_Graph.cpp */,
+				1D336F0825F5F4E200DEA8D3 /* Dijkstra.h */,
 			);
 			path = "NVM-Graph";
 			sourceTree = "<group>";
