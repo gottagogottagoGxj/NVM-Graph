@@ -239,10 +239,10 @@ public:
     const char* GetNData(const int& Nid)const;
     void SetNData(const int& Nid,const char* Data);
     
-    bool AddAttrDatN(const int& Nid,const int& AttrId,const char* Val);
-    bool AddAttrDatN(const int& Nid,const char* AttrName,const char* Val);
-    bool GetAttrDatN(const int& Nid,const int& AttrId,char* Val)const;
-    bool GetAttrDatN(const int& Nid,const char* AttrName,char* Val)const;
+    bool AddAttrDatN(const int& Nid,const int& AttrId,const void* Val,const uint& length);
+    bool AddAttrDatN(const int& Nid,const char* AttrName,const void* Val,const uint& length);
+    bool GetAttrDatN(const int& Nid,const int& AttrId,void* Val)const;
+    bool GetAttrDatN(const int& Nid,const char* AttrName,void* Val)const;
     void DelAttrDatN(const int& Nid,const int& AttrId);
     void DelAttrDatN(const int& Nid,const char* AttrName);
     void DelAttrDatN(const int& Nid);
@@ -250,10 +250,10 @@ public:
     bool GetAttrIdN(int& AttrId,const char* AttrName)const{return AttrN.GetAttrId(AttrId, AttrName);}
     bool GetAttrNameN(const int& AttrId,char* AttrName)const{return AttrN.GetAttrName(AttrId, AttrName);}
     
-    bool AddAttrDatE(const int& SrcNid,const int& DstNid,const int& AttrId,const char* Val);
-    bool AddAttrDatE(const int& SrcNid,const int& DstNid,const char* AttrName,const char* Val);
-    bool GetAttrDatE(const int& SrcNid,const int& DstNid,const int& AttrId,char* Val)const;
-    bool GetAttrDatE(const int& SrcNid,const int& DstNid,const char* AttrName,char* Val)const;
+    bool AddAttrDatE(const int& SrcNid,const int& DstNid,const int& AttrId,const void* Val,const uint& length);
+    bool AddAttrDatE(const int& SrcNid,const int& DstNid,const char* AttrName,const void* Val,const uint& length);
+    bool GetAttrDatE(const int& SrcNid,const int& DstNid,const int& AttrId,void* Val)const;
+    bool GetAttrDatE(const int& SrcNid,const int& DstNid,const char* AttrName,void* Val)const;
     void DelAttrDatE(const int& SrcNid,const int& DstNid,const int& AttrId);
     void DelAttrDatE(const int& SrcNid,const int& DstNid,const char* AttrName);
     void DelAttrDatE(const int& SrcNid,const int& DstNid);
@@ -417,7 +417,7 @@ int Property_Graph::NodeIter::GetInDeg()const{
         InDeg+=temp->GetInDeg();
         temp=(Node*)(Begin+temp->GetNextNodeAddre());
     }
-    InDeg+=temp->GetNextNodeAddre();
+    InDeg+=temp->GetInDeg();
     return InDeg;
 }
 int Property_Graph::NodeIter::GetOutDeg()const{
@@ -427,7 +427,7 @@ int Property_Graph::NodeIter::GetOutDeg()const{
         OutDeg+=temp->GetOutDeg();
         temp=(Node*)(Begin+temp->GetNextNodeAddre());
     }
-    OutDeg+=temp->GetNextNodeAddre();
+    OutDeg+=temp->GetOutDeg();
     return OutDeg;
 }
 bool Property_Graph::NodeIter::IsNbrNid(const int& nid)const{
@@ -707,19 +707,19 @@ void Property_Graph::SetNData(const int &Nid, const char *Data){
         GetNodePtr(location)->SetData(Data);
     }
 }
-bool Property_Graph::AddAttrDatN(const int &Nid, const int &AttrId, const char *Val){
+bool Property_Graph::AddAttrDatN(const int &Nid, const int &AttrId, const void* Val,const uint& length){
     if(!NidIsExist(Nid)) return false;
-    return AttrN.AddAttrDat(Nid, AttrId, Val);
+    return AttrN.AddAttrDat(Nid, AttrId, Val, length);
 }
-bool Property_Graph::AddAttrDatN(const int &Nid, const char *AttrName, const char *Val){
+bool Property_Graph::AddAttrDatN(const int &Nid, const char *AttrName, const void* Val,const uint& length){
     if(NidIsExist(Nid)) return false;
-    return AttrN.AddAttrDat(Nid, AttrName, Val);
+    return AttrN.AddAttrDat(Nid, AttrName, Val, length);
 }
-bool Property_Graph::GetAttrDatN(const int &Nid, const int &AttrId, char *Val)const{
+bool Property_Graph::GetAttrDatN(const int &Nid, const int &AttrId, void *Val)const{
     if(NidIsExist(Nid)) return false;
     return AttrN.GetAttrDat(Nid, AttrId, Val);
 }
-bool Property_Graph::GetAttrDatN(const int& Nid,const char* AttrName,char* Val)const{
+bool Property_Graph::GetAttrDatN(const int& Nid,const char* AttrName,void* Val)const{
     if(!NidIsExist(Nid)) return false;
     return AttrN.GetAttrDat(Nid, AttrName, Val);
 }
@@ -733,19 +733,19 @@ void Property_Graph::DelAttrDatN(const int &Nid){
     if(NidIsExist(Nid)){AttrN.DelAttrDat(Nid);}
 }
 
-bool Property_Graph::AddAttrDatE(const int &SrcNid, const int &DstNid, const int &AttrId, const char *Val){
+bool Property_Graph::AddAttrDatE(const int &SrcNid, const int &DstNid, const int &AttrId, const void* Val,const uint& length){
     if(!EdgeIsExist(SrcNid, DstNid)) return false;
-    return AttrE.AddAttrDat(SrcNid, DstNid, AttrId, Val);
+    return AttrE.AddAttrDat(SrcNid, DstNid, AttrId, Val, length);
 }
-bool Property_Graph::AddAttrDatE(const int &SrcNid, const int &DstNid, const char *AttrName, const char *Val){
+bool Property_Graph::AddAttrDatE(const int &SrcNid, const int &DstNid, const char *AttrName, const void* Val,const uint& length){
     if(!EdgeIsExist(SrcNid, DstNid)) return false;
-    return AttrE.AddAttrDat(SrcNid, DstNid, AttrName, Val);
+    return AttrE.AddAttrDat(SrcNid, DstNid, AttrName, Val, length);
 }
-bool Property_Graph::GetAttrDatE(const int &SrcNid, const int &DstNid, const int &AttrId, char *Val)const{
+bool Property_Graph::GetAttrDatE(const int &SrcNid, const int &DstNid, const int &AttrId, void *Val)const{
     if(!EdgeIsExist(SrcNid, DstNid)) return false;
     return AttrE.GetAttrDat(SrcNid, DstNid, AttrId, Val);
 }
-bool Property_Graph::GetAttrDatE(const int &SrcNid, const int &DstNid, const char *AttrName, char *Val)const{
+bool Property_Graph::GetAttrDatE(const int &SrcNid, const int &DstNid, const char *AttrName, void *Val)const{
     if(!EdgeIsExist(SrcNid, DstNid)) return false;
     return AttrE.GetAttrDat(SrcNid, DstNid, AttrName, Val);
 }

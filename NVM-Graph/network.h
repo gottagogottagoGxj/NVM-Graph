@@ -266,20 +266,22 @@ public:
     const char* GetEData(const int& Eid)const;
     void SetEData(const int& Eid,const char* Data);
     
-    bool AddAttrDatN(const int& Nid,const int& AttrId,const char* Val);
-    bool AddAttrDatN(const int& Nid,const char* AttrName,const char* Val);
-    bool GetAttrDatN(const int& Nid,const int& AttrId,char* Val)const;
-    bool GetAttrDatN(const int& Nid,const char* AttrName,char* Val)const;
+    bool AddAttrDatN(const int& Nid,const int& AttrId,const void* Val,const uint& length);
+    bool AddAttrDatN(const int& Nid,const char* AttrName,const void* Val,const uint& length);
+    bool GetAttrDatN(const int& Nid,const int& AttrId,void* Val)const;
+    bool GetAttrDatN(const int& Nid,const char* AttrName,void* Val)const;
     void DelAttrDatN(const int& Nid,const int& AttrId);
     void DelAttrDatN(const int& Nid,const char* AttrName);
     void DelAttrDatN(const int& Nid);
     int AddAttrNameN(const char* AttrName);
     bool GetAttrIdN(int& AttrId,const char* AttrName)const;
     bool GetAttrNameN(const int& AttrId,char* AttrName)const;
-    bool AddAttrDatE(const int& Eid,const int& AttrId,const char* Val);
-    bool AddAttrDatE(const int& Eid,const char* AttrName,const char* Val);
-    bool GetAttrDatE(const int& Eid,const int& AttrId,char* Val)const;
-    bool GetAttrDatE(const int& Eid,const char* AttrName,char* Val)const;
+    
+    
+    bool AddAttrDatE(const int& Eid,const int& AttrId,const void* Val,const uint& length);
+    bool AddAttrDatE(const int& Eid,const char* AttrName,const void* Val,const uint& length);
+    bool GetAttrDatE(const int& Eid,const int& AttrId,void* Val)const;
+    bool GetAttrDatE(const int& Eid,const char* AttrName,void* Val)const;
     void DelAttrDatE(const int& Eid,const int& AttrId);
     void DelAttrDatE(const int& Eid,const char* AttrName);
     void DelAttrDatE(const int& Eid);
@@ -866,19 +868,19 @@ void Net::SetEData(const int &Eid, const char *Data){
     }
 }
 
-bool Net::AddAttrDatN(const int& Nid,const int& AttrId,const char* Val){
+bool Net::AddAttrDatN(const int& Nid,const int& AttrId,const void* Val,const uint& length){
     if(!IsNode(Nid)) return false;
-   return AttrN.AddAttrDat(Nid,AttrId,Val);
+   return AttrN.AddAttrDat(Nid,AttrId,Val,length);
 }
-bool Net::AddAttrDatN(const int& Nid,const char* AttrName,const char* Val){
+bool Net::AddAttrDatN(const int& Nid,const char* AttrName,const void* Val,const uint& length){
     if(!IsNode(Nid)) return false;
-    return AttrN.AddAttrDat(Nid,AttrName,Val);
+    return AttrN.AddAttrDat(Nid,AttrName,Val,length);
 }
-bool Net::GetAttrDatN(const int& Nid,const int& AttrId,char* Val)const{
+bool Net::GetAttrDatN(const int& Nid,const int& AttrId,void* Val)const{
     if(!IsNode(Nid)) return false;
     return AttrN.GetAttrDat(Nid,AttrId,Val);
 }
-bool Net::GetAttrDatN(const int& Nid,const char* AttrName,char* Val)const{
+bool Net::GetAttrDatN(const int& Nid,const char* AttrName,void* Val)const{
     if(!IsNode(Nid)) return false;
     return AttrN.GetAttrDat(Nid,AttrName,Val);
 }
@@ -904,19 +906,19 @@ bool Net::GetAttrNameN(const int& AttrId,char* AttrName)const{
     return AttrN.GetAttrName(AttrId,AttrName);
 }
 
-bool Net::AddAttrDatE(const int& Eid,const int& AttrId,const char* Val){
+bool Net::AddAttrDatE(const int& Eid,const int& AttrId,const void* Val,const uint& length){
     if(!IsEdge(Eid)) return false;
-    return AttrE.AddAttrDat(Eid,AttrId,Val);
+    return AttrE.AddAttrDat(Eid,AttrId,Val ,length);
 }
-bool Net::AddAttrDatE(const int& Eid,const char* AttrName,const char* Val){
+bool Net::AddAttrDatE(const int& Eid,const char* AttrName,const void* Val,const uint& length){
     if(!IsEdge(Eid)) return false;
-    return AttrE.AddAttrDat(Eid,AttrName,Val);
+    return AttrE.AddAttrDat(Eid,AttrName,Val, length);
 }
-bool Net::GetAttrDatE(const int& Eid,const int& AttrId,char* Val)const{
+bool Net::GetAttrDatE(const int& Eid,const int& AttrId,void* Val)const{
     if(!IsEdge(Eid)) return false;
     return AttrE.GetAttrDat(Eid,AttrId,Val);
 }
-bool Net::GetAttrDatE(const int& Eid,const char* AttrName,char* Val)const{
+bool Net::GetAttrDatE(const int& Eid,const char* AttrName,void* Val)const{
     if(!IsEdge(Eid)) return false;
     return AttrE.GetAttrDat(Eid,AttrName,Val);
 }

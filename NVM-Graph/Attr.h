@@ -43,10 +43,10 @@ public:
             }
         }
     }
-    bool AddAttrDat(const int& Id,const char* AttrName,const char* Val);//若AttrName不存在返回false,若该属性已存在，返回false
-    bool AddAttrDat(const int& Id,const int& AttrId,const char* Val);
-    bool GetAttrDat(const int& Id,const char* AttrName,char* Val) const;
-    bool GetAttrDat(const int& Id,const int& AttrId,char* Val)const;
+    bool AddAttrDat(const int& Id,const char* AttrName,const void* Val,const uint& length);//若AttrName不存在返回false,若该属性已存在，返回false
+    bool AddAttrDat(const int& Id,const int& AttrId,const void* Val,const uint& length);
+    bool GetAttrDat(const int& Id,const char* AttrName,void* Val) const;
+    bool GetAttrDat(const int& Id,const int& AttrId,void* Val)const;
     void DelAttrDat(const int& Id,const char* AttrName);
     void DelAttrDat(const int& Id,const int& AttrId);
     void DelAttrDat(const int& Id);
@@ -56,32 +56,31 @@ public:
     
 };
 
-bool Attr::AddAttrDat(const int& Id,const char* AttrName,const char* Val){
+bool Attr::AddAttrDat(const int& Id,const char* AttrName,const void* Val,const uint& length){
     int AttrId;
     if(! AttrNameToId.Find(AttrName,strlen(AttrName),AttrId)) return false;
-    return AddAttrDat(Id,AttrId,Val);
+    return AddAttrDat(Id,AttrId,Val,length);
 }
-bool Attr::AddAttrDat(const int& Id,const int& AttrId,const char* Val){
+bool Attr::AddAttrDat(const int& Id,const int& AttrId,const void* Val, const uint& length){
     size_t location;
     if(!AttrIdToName.Find(AttrId,sizeof(int),location)) return false;
     AttrIndexKey indexkey(Id,AttrId);
     if(AttrIndex.Find(indexkey)) return false;
-    int vallength=strlen(Val);
-    int length=vallength+sizeof(int);
-    char* curptr=AttrTable->AllocateBytes(length);
-    MIn NVMIn(curptr,length);
-    NVMIn.Save(vallength);
-    NVMIn.Save(Val,vallength);
+    int Length=length+sizeof(int);
+    char* curptr=AttrTable->AllocateBytes(Length);
+    MIn NVMIn(curptr,Length);
+    NVMIn.Save(length);
+    NVMIn.Save(Val,length);
     indexkey.Location=curptr-AttrTable->BeginPtr();
     AttrIndex.Insert(indexkey);
     return true;
 }
-bool Attr::GetAttrDat(const int &Id, const char *AttrName, char *Val)const{
+bool Attr::GetAttrDat(const int &Id, const char *AttrName, void *Val)const{
     int AttrId;
     if(!AttrNameToId.Find(AttrName, strlen(AttrName), AttrId)) return false;
     return GetAttrDat(Id, AttrId, Val);
 }
-bool Attr::GetAttrDat(const int &Id, const int &AttrId, char *Val)const{
+bool Attr::GetAttrDat(const int &Id, const int &AttrId, void *Val)const{
     size_t location;
     if(!AttrIdToName.Find(AttrId, sizeof(int), location)) return false;
     AttrIndexKey indexkey(Id,AttrId);
@@ -177,10 +176,10 @@ public:
             }
         }
     }
-    bool AddAttrDat(const int& SrcNid,const int& DstNid,const char* AttrName,const char* Val);//若AttrName不存在返回false,若该属性已存在，返回false
-    bool AddAttrDat(const int& SrcNid,const int& DstNid,const int& AttrId,const char* Val);
-    bool GetAttrDat(const int& SrcNid,const int& DstNid,const char* AttrName,char* Val) const;
-    bool GetAttrDat(const int& SrcNid,const int& DstNid,const int& AttrId,char* Val)const;
+    bool AddAttrDat(const int& SrcNid,const int& DstNid,const char* AttrName,const void* Val,const uint& length);//若AttrName不存在返回false,若该属性已存在，返回false
+    bool AddAttrDat(const int& SrcNid,const int& DstNid,const int& AttrId,const void* Val,const uint& length);
+    bool GetAttrDat(const int& SrcNid,const int& DstNid,const char* AttrName,void* Val) const;
+    bool GetAttrDat(const int& SrcNid,const int& DstNid,const int& AttrId,void* Val)const;
     void DelAttrDat(const int& SrcNid,const int& DstNid,const char* AttrName);
     void DelAttrDat(const int& SrcNid,const int& DstNid,const int& AttrId);
     void DelAttrDat(const int& SrcNid,const int& DstNid);
@@ -190,32 +189,31 @@ public:
     
 };
 
-bool AttrPair::AddAttrDat(const int& SrcNid,const int& DstNid,const char* AttrName,const char* Val){
+bool AttrPair::AddAttrDat(const int& SrcNid,const int& DstNid,const char* AttrName,const void* Val,const uint& length){
     int AttrId;
     if(! AttrNameToId.Find(AttrName,strlen(AttrName),AttrId)) return false;
-    return AddAttrDat(SrcNid,DstNid,AttrId,Val);
+    return AddAttrDat(SrcNid,DstNid,AttrId,Val,length);
 }
-bool AttrPair::AddAttrDat(const int& SrcNid,const int& DstNid,const int& AttrId,const char* Val){
+bool AttrPair::AddAttrDat(const int& SrcNid,const int& DstNid,const int& AttrId,const void* Val,const uint& length){
     size_t location;
     if(!AttrIdToName.Find(AttrId,sizeof(int),location)) return false;
     AttrEdgeIndexKey indexkey(SrcNid,DstNid,AttrId);
     if(AttrIndex.Find(indexkey)) return false;
-    int vallength=strlen(Val);
-    int length=vallength+sizeof(int);
-    char* curptr=AttrTable->AllocateBytes(length);
-    MIn NVMIn(curptr,length);
-    NVMIn.Save(vallength);
-    NVMIn.Save(Val,vallength);
+    int alllength=length+sizeof(int);
+    char* curptr=AttrTable->AllocateBytes(alllength);
+    MIn NVMIn(curptr,alllength);
+    NVMIn.Save(length);
+    NVMIn.Save(Val,length);
     indexkey.Location=curptr-AttrTable->BeginPtr();
     AttrIndex.Insert(indexkey);
     return true;
 }
-bool AttrPair::GetAttrDat(const int &SrcNid,const int& DstNid, const char *AttrName, char *Val)const{
+bool AttrPair::GetAttrDat(const int &SrcNid,const int& DstNid, const char *AttrName, void *Val)const{
     int AttrId;
     if(!AttrNameToId.Find(AttrName, strlen(AttrName), AttrId)) return false;
     return GetAttrDat(SrcNid,DstNid, AttrId, Val);
 }
-bool AttrPair::GetAttrDat(const int &SrcNid, const int& DstNid, const int &AttrId, char *Val)const{
+bool AttrPair::GetAttrDat(const int &SrcNid, const int& DstNid, const int &AttrId, void *Val)const{
     size_t location;
     if(!AttrIdToName.Find(AttrId, sizeof(int), location)) return false;
     AttrEdgeIndexKey indexkey(SrcNid,DstNid,AttrId);
