@@ -15,7 +15,8 @@
 #include "Direct_graph.h"
 #include"Direct_multigraph.h"
 #include"network.h"
-#include"Property_Graph.h"
+
+#include"Dijkstra.h"
 using namespace std;
 
 void Property_Graph_Test();
@@ -32,6 +33,9 @@ void Property_Graph_Test(){
     Arena AttrNameNTable(0,1024),AttrIndexNTable(0,1024),AttrValueTable(0,1024);
     Arena AttrNameETable(0,1024),AttrIndexETable(0,1024);
     Property_Graph Graph(&NodeTable,&AttrNameNTable,&AttrIndexNTable,&AttrValueTable,&AttrNameETable,&AttrIndexETable,&AttrValueTable);
+    
+    
+    
     for(int i=0;i<7;++i) Graph.AddNode();
     
     
@@ -47,16 +51,7 @@ void Property_Graph_Test(){
     Graph.AddEdge(4, 7);
     Graph.AddEdge(5, 7);
     Graph.AddEdge(7, 6);
-    /*auto iter=Graph.BegNI();
-    while(!iter.IsEnd()){
-        cout<<iter.GetId()<<":"<<iter.GetData()<<endl;
-        cout<<"InDeg:"<<iter.GetInDeg()<<","<<"OutDeg:"<<iter.GetOutDeg()<<endl;
-        for(int i=1;i<=iter.GetInDeg();++i) cout<<iter.GetInNid(i)<<" ";
-        cout<<endl;
-        for(int i=1;i<=iter.GetOutDeg();++i) cout<<iter.GetOutNid(i)<<" ";
-        cout<<endl;
-        iter++;
-    }*/
+   
     
     Graph.SetNData(1, "v1");
     Graph.SetNData(2, "v2");
@@ -101,12 +96,11 @@ void Property_Graph_Test(){
     Graph.AddAttrDatE(5, 7, AttrEId, &a,sizeof(int));
     a=1;
     Graph.AddAttrDatE(7, 6, AttrEId, &a,sizeof(int));
-    Graph.DelNode(4);
     auto iter=Graph.BegNI();
     while(!iter.IsEnd()){
         cout<<iter.GetId()<<":"<<iter.GetData()<<endl;
         cout<<"InDeg:"<<iter.GetInDeg()<<","<<"OutDeg:"<<iter.GetOutDeg()<<endl;
-        for(int i=1;i<=iter.GetInDeg();++i) {
+        for(int i=0;i<iter.GetInDeg();++i) {
             int SrcNid=iter.GetInNid(i);
             int b=0;
             Graph.GetAttrDatE(SrcNid, iter.GetId(), AttrEId, &b);
@@ -118,6 +112,16 @@ void Property_Graph_Test(){
         cout<<endl;
         iter++;
     }
+    
+    
+    
+    Dijkstra<Property_Graph> Dij(&Graph);
+    Dij.DoDijkstra(1,-1,AttrEId);
+    vector<int> path;
+    Dij.GetShortestPath(1,3,path);
+    
+    
+    
     
     
     

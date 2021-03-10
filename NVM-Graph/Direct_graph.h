@@ -386,7 +386,7 @@ public:
                 InDeg+=temp->GetInDeg();
                 temp=(NvmNode*)(Begin+temp->GetNextNodeAddre());
             }
-            InDeg+=temp->GetNextNodeAddre();
+            InDeg+=temp->GetInDeg();
             return InDeg;
         }
         int GetOutDeg()const{
@@ -396,7 +396,7 @@ public:
                 OutDeg+=temp->GetOutDeg();
                 temp=(NvmNode*)(Begin+temp->GetNextNodeAddre());
             }
-            OutDeg+=temp->GetNextNodeAddre();
+            OutDeg+=temp->GetOutDeg();
             return OutDeg;
         }
         bool IsNbrNid(const int& nid)const{

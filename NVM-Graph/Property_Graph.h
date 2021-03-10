@@ -13,6 +13,7 @@
 
 //属性图，图是有向图，顶点表，没有边表，顶点有属性，边有属性（起始顶点、终止顶点标示一条边）
 class Property_Graph{
+public:
     class Node{
     private:
         int Nid;
@@ -446,6 +447,7 @@ bool Property_Graph::NodeIter::IsInNid(const int& nid)const{
     }
     return temp->IsInNid(nid);
 }
+//nid 取值从0---InDeg-1
 bool Property_Graph::NodeIter::IsOutNid(const int& nid)const{
     Node* temp=CurNode;
     while(temp->GetNextNodeAddre()!=0){
@@ -455,7 +457,7 @@ bool Property_Graph::NodeIter::IsOutNid(const int& nid)const{
     return temp->IsOutNid(nid);
 }
 int Property_Graph::NodeIter::GetInNid(const int edgeN)const{
-    int n=edgeN;
+    int n=edgeN+1;
     Node* temp=CurNode;
     while(n>temp->GetInDeg() && temp->GetNextNodeAddre()!=0){
         n-=temp->GetInDeg();
@@ -465,7 +467,7 @@ int Property_Graph::NodeIter::GetInNid(const int edgeN)const{
     return temp->GetInNid(n-1);
 }
 int Property_Graph::NodeIter::GetOutNid(const int edgeN)const{
-    int n=edgeN;
+    int n=edgeN+1;
     Node* temp=CurNode;
     while (n>temp->GetOutDeg()&& temp->GetNextNodeAddre()!=0) {
         n-=temp->GetOutDeg();

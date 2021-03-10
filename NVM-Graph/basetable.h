@@ -234,7 +234,9 @@ public:
     }
     
     IterPair Begin() const{
-        return IterPair(bucket,bucket+SlotPerBucket*BucketNum);
+        IterPair  iter(bucket,bucket+SlotPerBucket*BucketNum);
+        if(iter.GetTag()==0) iter++;
+        return iter;
     }
     IterPair End()const{
         return IterPair(bucket+SlotPerBucket*BucketNum,bucket+SlotPerBucket*BucketNum);

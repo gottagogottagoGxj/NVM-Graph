@@ -294,7 +294,7 @@ void NVMSkipList<Key,Comparator>::Delete(const Key &key){
         }
     }
 }
-template<typename Key,class Comparator>//有问题
+template<typename Key,class Comparator>
 void NVMSkipList<Key,Comparator>::Delete(const Key &MinKey, const Key &MaxKey){
     Node* prev[kMaxHeight];
     FindGreaterOrEqual(MinKey, prev);
@@ -303,10 +303,10 @@ void NVMSkipList<Key,Comparator>::Delete(const Key &MinKey, const Key &MaxKey){
         size_t tempoffset=prev[i]->Next(i);
         Node* temp=GetNodePtr(tempoffset);
         while(tempoffset!=0 && Compare(temp->key,MaxKey)<=0){
-            tempoffset=prev[i]->Next(i);
+            tempoffset=temp->Next(i);
             temp=GetNodePtr(tempoffset);
         }
-        prev[i]->SetNext(i,GetNodeOffset(temp));
+        prev[i]->SetNext(i,tempoffset);
     }
 }
 
