@@ -17,13 +17,16 @@
 #include"network.h"
 
 #include"Dijkstra.h"
+#include "Hub_Label.h"
 using namespace std;
 
 void Property_Graph_Test();
+void Label_Test();
 
 int main(){
     
-    Property_Graph_Test();
+    //Property_Graph_Test();
+    Label_Test();
     return 0;
 }
 
@@ -125,6 +128,75 @@ void Property_Graph_Test(){
     
     
     
+    
+    
+}
+
+
+void Label_Test(){
+    int NodeSize=Property_Graph::GetNodeSize();
+    Arena NodeTable(NodeSize,NodeSize*10);
+    Arena AttrNameNTable(0,1024),AttrIndexNTable(0,1024),AttrValueTable(0,1024);
+    Arena AttrNameETable(0,1024),AttrIndexETable(0,1024);
+    Property_Graph Graph(&NodeTable,&AttrNameNTable,&AttrIndexNTable,&AttrValueTable,&AttrNameETable,&AttrIndexETable,&AttrValueTable);
+    
+    
+    
+    for(int i=0;i<7;++i) Graph.AddNode();
+    
+    
+    Graph.AddEdge(1, 2);
+    Graph.AddEdge(1, 4);
+    Graph.AddEdge(2, 4);
+    Graph.AddEdge(2, 5);
+    Graph.AddEdge(3, 1);
+    Graph.AddEdge(3, 6);
+    Graph.AddEdge(4, 3);
+    Graph.AddEdge(4, 5);
+    Graph.AddEdge(4, 6);
+    Graph.AddEdge(4, 7);
+    Graph.AddEdge(5, 7);
+    Graph.AddEdge(7, 6);
+    
+    int AttrNId=Graph.AddAttrNameN("地名");
+    int AttrEId=Graph.AddAttrNameE("距离");
+    Graph.AddAttrDatN(1, AttrNId, "A",1);
+    Graph.AddAttrDatN(2, AttrNId, "B", 1);
+    Graph.AddAttrDatN(3, AttrNId, "C", 1);
+    Graph.AddAttrDatN(4, AttrNId, "D", 1);
+    Graph.AddAttrDatN(5, AttrNId, "E", 1);
+    Graph.AddAttrDatN(6, AttrNId, "F", 1);
+    Graph.AddAttrDatN(7, AttrNId, "G", 1);
+    
+    
+    int a=2;
+    Graph.AddAttrDatE(1, 2, AttrEId, &a,sizeof(int));
+    a=1;
+    Graph.AddAttrDatE(1, 4, AttrEId, &a,sizeof(int));
+    a=3;
+    Graph.AddAttrDatE(2, 4, AttrEId, &a,sizeof(int));
+    a=10;
+    Graph.AddAttrDatE(2, 5, AttrEId, &a,sizeof(int));
+    a=4;
+    Graph.AddAttrDatE(3, 1, AttrEId, &a,sizeof(int));
+    a=5;
+    Graph.AddAttrDatE(3, 6, AttrEId, &a,sizeof(int));
+    a=2;
+    Graph.AddAttrDatE(4, 3, AttrEId, &a,sizeof(int));
+    a=2;
+    Graph.AddAttrDatE(4, 5, AttrEId, &a,sizeof(int));
+    a=8;
+    Graph.AddAttrDatE(4, 6, AttrEId, &a,sizeof(int));
+    a=4;
+    Graph.AddAttrDatE(4, 7, AttrEId, &a,sizeof(int));
+    a=6;
+    Graph.AddAttrDatE(5, 7, AttrEId, &a,sizeof(int));
+    a=1;
+    Graph.AddAttrDatE(7, 6, AttrEId, &a,sizeof(int));
+    
+    HubLabel<Property_Graph> label(&Graph,AttrEId);
+    label.ConstructIndex();
+    cout<<label.Query(1, 3);
     
     
 }

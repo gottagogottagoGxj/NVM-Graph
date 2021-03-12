@@ -205,7 +205,8 @@ public:
         Node* curnode=(Node*)NodeTable->EndPtr();
         return NodeIter(NodeTable->BeginPtr(),NodeTable->EndPtr(),curnode);
     }
-    size_t GetNodeNum()const{return NodeNum;}
+    int GetNodeNum()const{return NodeNum;}
+    int GetMxNid()const{return MxNid;}
     bool NidIsExist(const int& nid)const{
         uint64_t location;
         return NodeHash.Find(nid, location);

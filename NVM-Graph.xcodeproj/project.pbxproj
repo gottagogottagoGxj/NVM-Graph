@@ -31,6 +31,7 @@
 		1D336F0325F4C1B400DEA8D3 /* Property_Graph.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Property_Graph.cpp; sourceTree = "<group>"; };
 		1D336F0825F5F4E200DEA8D3 /* Dijkstra.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Dijkstra.h; sourceTree = "<group>"; };
 		1D6F6B642574F13700941275 /* Direct_graph.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Direct_graph.h; sourceTree = "<group>"; };
+		1D763B2025FB442200F964C9 /* Hub_Label.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Hub_Label.h; sourceTree = "<group>"; };
 		1D78498E259333E80068AE37 /* NVMSkiplist.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = NVMSkiplist.h; sourceTree = "<group>"; };
 		1D8262B72563DB1300F7953C /* Arena.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Arena.h; sourceTree = "<group>"; };
 		1D83390025F350DB00E94941 /* BFS.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = BFS.h; sourceTree = "<group>"; };
@@ -80,6 +81,7 @@
 		1D86CD53254058C700E3ADC7 /* NVM-Graph */ = {
 			isa = PBXGroup;
 			children = (
+				1D763B2025FB442200F964C9 /* Hub_Label.h */,
 				1D86CD54254058C700E3ADC7 /* main.cpp */,
 				1D6F6B642574F13700941275 /* Direct_graph.h */,
 				1DB8B02D2575F145003BD17C /* Derict_Graph.cpp */,
