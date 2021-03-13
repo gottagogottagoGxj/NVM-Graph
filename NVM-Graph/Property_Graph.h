@@ -121,6 +121,7 @@ public:
         bool GetFlag()const{return CurNode->GetFlag();}
         int GetInDeg()const;
         int GetOutDeg()const;
+        void GetInOutDeg(int& InDeg,int& OutDeg)const;
         bool IsNbrNid(const int& nid)const;
         bool IsInNid(const int& nid)const;
         bool IsOutNid(const int& nid)const;
@@ -431,6 +432,18 @@ int Property_Graph::NodeIter::GetOutDeg()const{
     }
     OutDeg+=temp->GetOutDeg();
     return OutDeg;
+}
+void Property_Graph::NodeIter::GetInOutDeg(int &InDeg, int &OutDeg)const{
+    InDeg=0;
+    OutDeg=0;
+    Node* temp=CurNode;
+    while(temp->GetNextNodeAddre()!=0){
+        InDeg+=temp->GetInDeg();
+        OutDeg+=temp->GetOutDeg();
+        temp=(Node*)(Begin+temp->GetNextNodeAddre());
+    }
+    InDeg+=temp->GetInDeg();
+    OutDeg+=temp->GetOutDeg();
 }
 bool Property_Graph::NodeIter::IsNbrNid(const int& nid)const{
     Node* temp=CurNode;

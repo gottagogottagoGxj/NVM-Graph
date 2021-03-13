@@ -34,15 +34,17 @@ private:
 
 template<class PGraph>
 void HubLabel<PGraph>::ConstructIndex(){
-    std::vector<std::tuple<int,int,int>> Nid;
+    std::vector<std::pair<int64_t, int>> Nid;
     typename PGraph::NodeIter Iter=Graph->BegNI();
     while (!Iter.IsEnd()) {
-        Nid.push_back(std::tuple<int,int,int>(Iter.GetOutDeg(),Iter.GetInDeg(),Iter.GetId()));
+        int InDeg,OutDeg;
+        Iter.GetInOutDeg(InDeg,OutDeg);
+        Nid.push_back(std::pair<int64_t, int>(InDeg*OutDeg,Iter.GetId()));
         Iter++;
     }
     std::sort(Nid.rbegin(), Nid.rend());
-    for(auto iter=Nid.begin();iter!=Nid.end();++iter){
-        PrunedDijkstra(std::get<2>(*iter), true, true);
+    for(int i=0;i<Nid.size();++i){
+        PrunedDijkstra(Nid[i].second, true, true);
     }
 }
 template<class PGraph>
