@@ -11,24 +11,105 @@
 #include<set>
 #include<queue>
 #include<bitset>
-#include "UNDerict_Graph.h"
-#include "Direct_graph.h"
-#include"Direct_multigraph.h"
-#include"network.h"
-
-#include"Dijkstra.h"
+#include<algorithm>
+#include<fstream>
+#include<time.h>
+#include "Property_Graph.h"
 #include "Hub_Label.h"
+#include "Dijkstra.h"
+#include"CHL_UNWeight.h"
+#include"UNDirect_UNWeight_Graph.h"
+#include"UNDirect_Weight_Graph.h"
 using namespace std;
 
 void Property_Graph_Test();
 void Label_Test();
+void UNDirect_UNWeight_Test();
+void UNDirect_Weight_Test();
+void LoadData(UNDirect_UNWeight_Graph& graph);
 
 int main(){
     
     //Property_Graph_Test();
-    Label_Test();
+    //Label_Test();
+    //UNDirect_UNWeight_Test();
+    UNDirect_Weight_Test();
     return 0;
 }
+
+
+void UNDirect_Weight_Test(){
+    Arena Node(UNDirect_Weight_Graph::GetNodeSize(),1024*1024);
+    Arena Name(0,1024),Index(0,1024*1024),Value(0,1024*1024);
+    UNDirect_Weight_Graph Graph(&Node,&Name,&Index,&Value);
+    const int WeightId=Graph.AddAttrNameE("EdgeWeight");
+    Graph.AddEdge2(1, 2, WeightId, 2);
+}
+
+
+void UNDirect_UNWeight_Test(){
+    Arena arena(UNDirect_UNWeight_Graph::GetNodeSize(),1024*1024*16);
+    UNDirect_UNWeight_Graph Graph(&arena);
+    //LoadData(Graph);
+    Graph.AddEdge2(1, 2);
+    Graph.AddEdge2(2, 3);
+    Graph.AddEdge2(3, 4);
+    Graph.AddEdge2(2, 4);
+    Graph.AddEdge2(4, 5);
+    Graph.AddEdge2(5, 6);
+    Graph.AddEdge2(6, 7);
+    Graph.AddEdge2(7, 8);
+    Graph.AddEdge2(8, 9);
+    Graph.AddEdge2(5, 8);
+    
+    CHL<UNDirect_UNWeight_Graph> chl(&Graph);
+    clock_t start,finish;
+    start=clock();
+    chl.ConstructIndexBetweenMin();
+    finish=clock();
+    //cout<<"BCHL时间"<<finish-start<<endl;
+    cout<<"BCHL标签"<<chl.GetLabelSize()<<endl;
+    start=clock();
+    for(int i=1;i<8;++i){
+        for(int j=i+1;j<=8;++j){
+            cout<<chl.QueryBetweenMin(i, j)<<" ";
+        }
+    }
+    cout<<endl;
+    finish=clock();
+    cout<<"BCHL查询时间："<<finish-start<<endl;
+    
+    CHL<UNDirect_UNWeight_Graph> chll(&Graph);
+    start=clock();
+    chll.ConstructIndex();
+    finish=clock();
+    //cout<<"CHL时间"<<finish-start<<endl;
+    cout<<"CHL标签"<<chll.GetLabelSize()<<endl;
+    start=clock();
+    for(int i=1;i<8;++i){
+        for(int j=i+1;j<=8;++j){
+            cout<<chll.Query(i, j)<<" ";
+        }
+    }
+    cout<<endl;
+    finish=clock();
+    cout<<"CHL查询时间："<<finish-start<<endl;
+    cout<<arena.EndPtr()-arena.BeginPtr()<<endl;
+    cout<<Graph.GetNodeNum()<<" "<<Graph.GetEdgeNum()<<endl;
+    
+    
+}
+void LoadData(UNDirect_UNWeight_Graph& graph){
+    ifstream datafile("/Users/jiangqingyuejinren/Desktop/data.txt");
+    while(!datafile.eof()){
+        int SrcNid,DstNid;
+        datafile>>SrcNid>>DstNid;
+        if(SrcNid==0 || DstNid==0) continue;
+        graph.AddEdge2(SrcNid, DstNid);}
+}
+
+
+
 
 void Property_Graph_Test(){
     int NodeSize=Property_Graph::GetNodeSize();
@@ -200,3 +281,4 @@ void Label_Test(){
     
     
 }
+

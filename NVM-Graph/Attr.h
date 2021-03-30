@@ -176,25 +176,25 @@ public:
             }
         }
     }
-    bool AddAttrDat(const int& SrcNid,const int& DstNid,const char* AttrName,const void* Val,const uint& length);//若AttrName不存在返回false,若该属性已存在，返回false
-    bool AddAttrDat(const int& SrcNid,const int& DstNid,const int& AttrId,const void* Val,const uint& length);
+    bool AddAttrDat(const int& SrcNid,const int& DstNid,const char* AttrName,const void* Val,const uint& length,const bool & Direct=true);//若AttrName不存在返回false,若该属性已存在，返回false
+    bool AddAttrDat(const int& SrcNid,const int& DstNid,const int& AttrId,const void* Val,const uint& length,const bool & Direct=true);
     bool GetAttrDat(const int& SrcNid,const int& DstNid,const char* AttrName,void* Val) const;
     bool GetAttrDat(const int& SrcNid,const int& DstNid,const int& AttrId,void* Val)const;
-    void DelAttrDat(const int& SrcNid,const int& DstNid,const char* AttrName);
-    void DelAttrDat(const int& SrcNid,const int& DstNid,const int& AttrId);
-    void DelAttrDat(const int& SrcNid,const int& DstNid);
+    void DelAttrDat(const int& SrcNid,const int& DstNid,const char* AttrName,const bool& Direct=true);
+    void DelAttrDat(const int& SrcNid,const int& DstNid,const int& AttrId,const bool& Direct=true);
+    void DelAttrDat(const int& SrcNid,const int& DstNid,const bool& Direct=true);
     int AddAttrName(const char* AttrName);
     bool GetAttrId(int& AttrId,const char* AttrName)const;
     bool GetAttrName(const int& AttrId,char* AttrName)const;
     
 };
 
-bool AttrPair::AddAttrDat(const int& SrcNid,const int& DstNid,const char* AttrName,const void* Val,const uint& length){
+bool AttrPair::AddAttrDat(const int& SrcNid,const int& DstNid,const char* AttrName,const void* Val,const uint& length,const bool& Direct){
     int AttrId;
     if(! AttrNameToId.Find(AttrName,strlen(AttrName),AttrId)) return false;
-    return AddAttrDat(SrcNid,DstNid,AttrId,Val,length);
+    return AddAttrDat(SrcNid,DstNid,AttrId,Val,length,Direct);
 }
-bool AttrPair::AddAttrDat(const int& SrcNid,const int& DstNid,const int& AttrId,const void* Val,const uint& length){
+bool AttrPair::AddAttrDat(const int& SrcNid,const int& DstNid,const int& AttrId,const void* Val,const uint& length,const bool& Direct){
     size_t location;
     if(!AttrIdToName.Find(AttrId,sizeof(int),location)) return false;
     AttrEdgeIndexKey indexkey(SrcNid,DstNid,AttrId);
@@ -206,6 +206,9 @@ bool AttrPair::AddAttrDat(const int& SrcNid,const int& DstNid,const int& AttrId,
     NVMIn.Save(Val,length);
     indexkey.Location=curptr-AttrTable->BeginPtr();
     AttrIndex.Insert(indexkey);
+    if(!Direct){
+        AttrIndex.Insert(AttrEdgeIndexKey(DstNid, SrcNid, AttrId, indexkey.Location));
+    }
     return true;
 }
 bool AttrPair::GetAttrDat(const int &SrcNid,const int& DstNid, const char *AttrName, void *Val)const{
@@ -224,19 +227,21 @@ bool AttrPair::GetAttrDat(const int &SrcNid, const int& DstNid, const int &AttrI
     NVMout.Load(Val, length);
     return true;
 }
-void AttrPair::DelAttrDat(const int& SrcNid,const int& DstNid, const char *AttrName){
+void AttrPair::DelAttrDat(const int& SrcNid,const int& DstNid, const char *AttrName,const bool& Direct){
     int AttrId;
     if(AttrNameToId.Find(AttrName, strlen(AttrName), AttrId)){
-        DelAttrDat(SrcNid,DstNid, AttrId);
+        DelAttrDat(SrcNid,DstNid, AttrId,Direct);
     }
 }
-void AttrPair::DelAttrDat(const int &SrcNid,const int& DstNid, const int &AttrId){
+void AttrPair::DelAttrDat(const int &SrcNid,const int& DstNid, const int &AttrId,const bool& Direct){
     AttrEdgeIndexKey indexkey(SrcNid,DstNid,AttrId);
     AttrIndex.Delete(indexkey);
+    if(!Direct) AttrIndex.Delete(AttrEdgeIndexKey(DstNid, SrcNid, AttrId));
 }
-void AttrPair::DelAttrDat(const int &SrcNid,const int& DstNid){
+void AttrPair::DelAttrDat(const int &SrcNid,const int& DstNid,const bool& Direct){
     AttrEdgeIndexKey MinKey(SrcNid,DstNid,0),MaxKey(SrcNid,DstNid,MxAttrId);
     AttrIndex.Delete(MinKey, MaxKey);
+    if(!Direct) AttrIndex.Delete(AttrEdgeIndexKey(DstNid, SrcNid, 0), AttrEdgeIndexKey(DstNid, SrcNid, MxAttrId));
 }
 
 int AttrPair::AddAttrName(const char *AttrName){

@@ -453,7 +453,7 @@ int Direct_multigraph::NodeIter::GetInDeg()const{
         InDeg+=temp->GetInDeg();
         temp=(Node*)(Begin+temp->GetNextNodeAddre());
     }
-    InDeg+=temp->GetNextNodeAddre();
+    InDeg+=temp->GetInDeg();
     return InDeg;
 }
 int Direct_multigraph::NodeIter::GetOutDeg()const{
@@ -463,7 +463,7 @@ int Direct_multigraph::NodeIter::GetOutDeg()const{
         OutDeg+=temp->GetOutDeg();
         temp=(Node*)(Begin+temp->GetNextNodeAddre());
     }
-    OutDeg+=temp->GetNextNodeAddre();
+    OutDeg+=temp->GetOutDeg();
     return OutDeg;
 }
 bool Direct_multigraph::NodeIter::IsNbrEid(const int& eid)const{
