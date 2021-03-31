@@ -28,6 +28,7 @@
 		1D336F0825F5F4E200DEA8D3 /* Dijkstra.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Dijkstra.h; sourceTree = "<group>"; };
 		1D53457726131C0900696979 /* UNDirect_Weight_Graph.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = UNDirect_Weight_Graph.h; sourceTree = "<group>"; };
 		1D53457926134C4C00696979 /* UNDirect_UNWeight_Graph.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = UNDirect_UNWeight_Graph.h; sourceTree = "<group>"; };
+		1D53457B26140A6500696979 /* CHL_Weight.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CHL_Weight.h; sourceTree = "<group>"; };
 		1D6F6B642574F13700941275 /* Direct_graph.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Direct_graph.h; sourceTree = "<group>"; };
 		1D763B2025FB442200F964C9 /* Hub_Label.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Hub_Label.h; sourceTree = "<group>"; };
 		1D78498E259333E80068AE37 /* NVMSkiplist.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = NVMSkiplist.h; sourceTree = "<group>"; };
@@ -94,6 +95,7 @@
 				1D2DD20E260CB05500AF31DD /* CHL_UNWeight.h */,
 				1D53457726131C0900696979 /* UNDirect_Weight_Graph.h */,
 				1D53457926134C4C00696979 /* UNDirect_UNWeight_Graph.h */,
+				1D53457B26140A6500696979 /* CHL_Weight.h */,
 			);
 			path = "NVM-Graph";
 			sourceTree = "<group>";

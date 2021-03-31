@@ -31,7 +31,7 @@ public:
     void ConstructIndexBetween();
     int Query(const int& SrcNid,const int& DstNid)const;
     int QueryBetweenMin(const int& SrcNid,const int& DstNid)const;
-    int GetLabelSize(){
+    int GetLabelSize()const{
         int size=0;
         for(int i=0;i<Label.size();++i){
             size+=Label[i].first.size();

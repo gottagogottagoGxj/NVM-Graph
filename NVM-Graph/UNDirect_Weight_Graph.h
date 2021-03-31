@@ -227,6 +227,8 @@ public:
     int AddEdge(const int& SrcNid,const int& DstNid,const int& AttrId,const int& Weight);
     int AddEdge2(const int& SrcNid,const int& DstNid,const int& AttrId,const int& Weight);
     
+    //用于收缩处理，若SrcNid DstNid之间无边，加入一条边，权重为weight，若有边，边权重取新权重和原原权重最小值
+    void AddEdge3(const int& SrcNid,const int& DstNid,const int& AttrId,const int& Weight);
     
     void DelEdge(const int& SrcNid,const int& DstNid);
     
@@ -554,6 +556,21 @@ int UNDirect_Weight_Graph::AddEdge2(const int&SrcNid, const int& DstNid,const in
     return 1;
 }
 
+void UNDirect_Weight_Graph::AddEdge3(const int &SrcNid, const int &DstNid, const int &AttrId, const int &Weight){
+    if(IsEdge(SrcNid, DstNid)){
+        int value;
+        GetAttrDatE(SrcNid, DstNid, AttrId, &value);
+        if(Weight<value) AttrE.UpdateAttrDat(SrcNid, DstNid, AttrId, &Weight, sizeof(int),false);
+    }
+    else{
+        uint64_t location1,location2;
+        if(!NodeHash.Find(SrcNid, location1)){AddNode(SrcNid);NodeHash.Find(SrcNid, location1);}
+        if(!NodeHash.Find(DstNid, location2)){AddNode(DstNid);NodeHash.Find(DstNid, location2);}
+        AddEdgeToNode(location1, DstNid);
+        AddEdgeToNode(location2, SrcNid);
+        AttrE.AddAttrDat(SrcNid, DstNid, AttrId, &Weight, sizeof(int),false);
+    }
+}
 
 void UNDirect_Weight_Graph::DelEdge(const int &SrcNid, const int &DstNid){
     if(!IsEdge(SrcNid, DstNid)) {return;}

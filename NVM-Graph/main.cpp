@@ -20,6 +20,7 @@
 #include"CHL_UNWeight.h"
 #include"UNDirect_UNWeight_Graph.h"
 #include"UNDirect_Weight_Graph.h"
+#include"CHL_Weight.h"
 using namespace std;
 
 void Property_Graph_Test();
@@ -44,6 +45,33 @@ void UNDirect_Weight_Test(){
     UNDirect_Weight_Graph Graph(&Node,&Name,&Index,&Value);
     const int WeightId=Graph.AddAttrNameE("EdgeWeight");
     Graph.AddEdge2(1, 2, WeightId, 2);
+    Graph.AddEdge2(2, 3, WeightId, 3);
+    Graph.AddEdge2(1, 3, WeightId, 8);
+    Graph.AddEdge2(3, 4, WeightId, 5);
+    Graph.AddEdge2(1, 4, WeightId, 5);
+    Graph.AddEdge2(4, 5, WeightId, 4);
+    Graph.AddEdge2(1, 5, WeightId, 7);
+    Graph.AddEdge2(5, 6, WeightId, 2);
+    Graph.AddEdge2(1, 6, WeightId, 1);
+    /*auto iter=Graph.BegNI();
+    while (!iter.IsEnd()) {
+        cout<<iter.GetId()<<"Deg:"<<iter.GetDeg()<<endl;
+        for(int i=0;i<iter.GetDeg();++i){
+            int nid=iter.GetNbrNid(i);
+            int value;
+            Graph.GetAttrDatE(iter.GetId(), nid, WeightId, &value);
+            cout<<"<"<<iter.GetId()<<","<<nid<<">:"<<value<<endl;
+        }
+        iter++;
+    }*/
+    CHL_Weight<UNDirect_Weight_Graph> chl(&Graph,WeightId);
+    chl.ConstructIndex();
+    for(int i=1;i<6;++i){
+        for(int j=i+1;j<=6;++j){
+            cout<<i<<"and"<<j<<"diatance is:"<<chl.Query(i, j)<<endl;
+        }
+    }
+    cout<<chl.GetLabelSize()<<endl;
 }
 
 

@@ -47,6 +47,8 @@ public:
     bool AddAttrDat(const int& Id,const int& AttrId,const void* Val,const uint& length);
     bool GetAttrDat(const int& Id,const char* AttrName,void* Val) const;
     bool GetAttrDat(const int& Id,const int& AttrId,void* Val)const;
+    void UpdateAttrDat(const int& Id,const char* AttrName,const void* Val,const uint& length);
+    void UpdateAttrDat(const int& Id,const int& AttrId,const void* Val,const uint& length);
     void DelAttrDat(const int& Id,const char* AttrName);
     void DelAttrDat(const int& Id,const int& AttrId);
     void DelAttrDat(const int& Id);
@@ -90,6 +92,19 @@ bool Attr::GetAttrDat(const int &Id, const int &AttrId, void *Val)const{
     NVMout.Load(length);
     NVMout.Load(Val, length);
     return true;
+}
+void Attr::UpdateAttrDat(const int &Id, const char *AttrName, const void *Val, const uint &length){
+    int AttrId;
+    if(!AttrNameToId.Find(AttrName, strlen(AttrName), AttrId)) return;
+    UpdateAttrDat(Id, AttrId, Val, length);
+}
+void Attr::UpdateAttrDat(const int &Id, const int &AttrId, const void *Val, const uint &length){
+    int Length=length+sizeof(int);
+    char* curptr=AttrTable->AllocateBytes(Length);
+    MIn NVMIn(curptr,Length);
+    NVMIn.Save(length);
+    NVMIn.Save(Val, length);
+    AttrIndex.Update(AttrIndexKey(Id, AttrId, curptr-AttrTable->BeginPtr()));
 }
 void Attr::DelAttrDat(const int &Id, const char *AttrName){
     int AttrId;
@@ -180,6 +195,8 @@ public:
     bool AddAttrDat(const int& SrcNid,const int& DstNid,const int& AttrId,const void* Val,const uint& length,const bool & Direct=true);
     bool GetAttrDat(const int& SrcNid,const int& DstNid,const char* AttrName,void* Val) const;
     bool GetAttrDat(const int& SrcNid,const int& DstNid,const int& AttrId,void* Val)const;
+    void UpdateAttrDat(const int& SrcNid,const int& DstNid,const char* AttrName,const void* Val,const uint& length,const bool& Direct=true);
+    void UpdateAttrDat(const int& SrcNid,const int& DstNid,const int& AttrId,const void* Val,const uint& length,const bool& Direct=true);
     void DelAttrDat(const int& SrcNid,const int& DstNid,const char* AttrName,const bool& Direct=true);
     void DelAttrDat(const int& SrcNid,const int& DstNid,const int& AttrId,const bool& Direct=true);
     void DelAttrDat(const int& SrcNid,const int& DstNid,const bool& Direct=true);
@@ -226,6 +243,26 @@ bool AttrPair::GetAttrDat(const int &SrcNid, const int& DstNid, const int &AttrI
     NVMout.Load(length);
     NVMout.Load(Val, length);
     return true;
+}
+void AttrPair::UpdateAttrDat(const int &SrcNid, const int &DstNid, const char *AttrName, const void *Val, const uint &length,const bool& Direct){
+    int AttrId;
+    if(AttrNameToId.Find(AttrName, strlen(AttrName), AttrId)){
+        UpdateAttrDat(SrcNid, DstNid, AttrId, Val, length, Direct);
+    }
+}
+void AttrPair::UpdateAttrDat(const int &SrcNid, const int &DstNid, const int &AttrId, const void *Val, const uint &length, const bool& Direct){
+    size_t location;
+    if(AttrIdToName.Find(AttrId, sizeof(int), location)){
+        int Length=length+sizeof(int);
+        char* curptr=AttrTable->AllocateBytes(Length);
+        MIn NVMIn(curptr,Length);
+        NVMIn.Save(length);
+        NVMIn.Save(Val, length);
+        AttrIndex.Update(AttrEdgeIndexKey(SrcNid, DstNid, AttrId, curptr-AttrTable->BeginPtr()));
+        if(!Direct){
+            AttrIndex.Update(AttrEdgeIndexKey(DstNid, SrcNid, AttrId, curptr-AttrTable->BeginPtr()));
+        }
+    }
 }
 void AttrPair::DelAttrDat(const int& SrcNid,const int& DstNid, const char *AttrName,const bool& Direct){
     int AttrId;

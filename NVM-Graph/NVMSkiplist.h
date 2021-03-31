@@ -123,6 +123,7 @@ public:
     void Insert(const Key& key);
     bool Contains(const Key& key) const;
     bool Find(Key& key)const;
+    void Update(const Key& key);//key在skiplist中修改，否则添加key
     void Delete(const Key& key);
     void Delete(const Key& MinKey,const Key& MaxKey);//删除跳表中[MinKey,MaxKey]
 private:
@@ -282,6 +283,16 @@ bool NVMSkipList<Key,Comparator>::Find(Key& key)const{
         return true;
     }
     return false;
+}
+template<typename Key,class Comparator>
+void NVMSkipList<Key,Comparator>::Update(const Key &key){
+    Node* x=FindGreaterOrEqual(key,NULL);
+    if(x!=NULL && Compare(x->key,key)==0){
+        x->key=key;
+    }
+    else{
+        Insert(key);
+    }
 }
 template<typename Key,class Comparator>
 void NVMSkipList<Key,Comparator>::Delete(const Key &key){
