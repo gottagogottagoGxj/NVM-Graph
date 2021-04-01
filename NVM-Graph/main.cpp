@@ -39,6 +39,7 @@ int main(){
 }
 
 
+/// <#Description#>
 void UNDirect_Weight_Test(){
     Arena Node(UNDirect_Weight_Graph::GetNodeSize(),1024*1024);
     Arena Name(0,1024),Index(0,1024*1024),Value(0,1024*1024);
@@ -61,17 +62,26 @@ void UNDirect_Weight_Test(){
             int value;
             Graph.GetAttrDatE(iter.GetId(), nid, WeightId, &value);
             cout<<"<"<<iter.GetId()<<","<<nid<<">:"<<value<<endl;
+            int value1;
+            Graph.GetAttrDatE(nid, iter.GetId(), WeightId, &value1);
+            cout<<"<"<<nid<<","<<iter.GetId()<<">:"<<value1<<endl;
         }
         iter++;
     }*/
     CHL_Weight<UNDirect_Weight_Graph> chl(&Graph,WeightId);
-    chl.ConstructIndex();
-    for(int i=1;i<6;++i){
+    chl.ConstructIndexMin();
+    /*for(int i=1;i<6;++i){
         for(int j=i+1;j<=6;++j){
             cout<<i<<"and"<<j<<"diatance is:"<<chl.Query(i, j)<<endl;
         }
+    }*/
+    Arena label(0,1024*1024);
+    chl.SaveLabel(&label);
+    for(int i=1;i<6;++i){
+        for(int j=i+1;j<=6;++j){
+            cout<<i<<"and"<<j<<"diatance is:"<<chl.QueryMin(i, j)<<endl;
+        }
     }
-    cout<<chl.GetLabelSize()<<endl;
 }
 
 

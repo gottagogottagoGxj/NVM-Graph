@@ -165,7 +165,7 @@ public:
 
 template<typename Key,class Comparator>
 struct NVMSkipList<Key,Comparator>::Node{
-    const Key key;
+    Key key;
     size_t next[1];
     
     explicit Node(const Key& k):key(k){}
