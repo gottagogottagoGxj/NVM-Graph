@@ -78,10 +78,22 @@ void CHL<PGraph>::PrunedBFS(const int& SrcNid){
             if(Dist>CurPair.first){
                 AddHubLabel(CurPair.second,SrcNid,CurPair.first);
                 typename PGraph::NodeIter iter=Graph->GetNI(CurPair.second);
-                for(int i=0;i<iter.GetDeg();++i){
+                typename PGraph::NodeIter temp;
+                do{
+                    temp=iter;
+                    int Deg;
+                    const int* Nbr=iter.GetCurNbr(Deg);
+                    for(int i=0;i<Deg;++i){
+                        int DstNid=Nbr[i];
+                        Queue.push(std::pair<int, int>(CurPair.first+1,DstNid));
+                    }
+                    iter.ToNextNode();
+                }while(!temp.IsNodeEnd());
+                
+                /*for(int i=0;i<iter.GetDeg();++i){
                     int DstNid=iter.GetNbrNid(i);
                     Queue.push(std::pair<int, int>(CurPair.first+1,DstNid));
-                }
+                }*/
             }
         }
 }
@@ -177,11 +189,23 @@ void CHL<PGraph>::PrunedBFSMin(const int& SrcNid){
             if(Dist>CurPair.first){
                 AddHubLabel(CurPair.second,SrcNid,CurPair.first);
                 typename PGraph::NodeIter iter=Graph->GetNI(CurPair.second);
-                for(int i=0;i<iter.GetDeg();++i){
+                typename PGraph::NodeIter temp;
+                do{
+                    temp=iter;
+                    int Deg;
+                    const int* Nbr=iter.GetCurNbr(Deg);
+                    for(int i=0;i<Deg;++i){
+                        int DstNid=Nbr[i];
+                        if(LocalMinSet.find(DstNid)!=LocalMinSet.end()) continue;
+                        Queue.push(std::pair<int, int>(CurPair.first+1,DstNid));
+                    }
+                    iter.ToNextNode();
+                }while(!temp.IsNodeEnd());
+                /*for(int i=0;i<iter.GetDeg();++i){
                     int DstNid=iter.GetNbrNid(i);
                     if(LocalMinSet.find(DstNid)!=LocalMinSet.end()) continue;
                     Queue.push(std::pair<int, int>(CurPair.first+1,DstNid));
-                }
+                }*/
             }
         }
 }

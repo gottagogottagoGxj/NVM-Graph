@@ -22,27 +22,34 @@ public:
     class Node{
     private:
         int Nid;//节点id
-        char Data[NodeDatalengthDef];//标签
+        int Data[NodeDatalengthDef];//标签,为了子图匹配时方便，改成int数组，初始数组内所有值为-1，添加一个标签，占数组一位
         int NidVNum;//当前节点边数
         int NidV[InOutEidNumDef];//每条边另一端节点id
         int Flag;//当前节点标识，-1代表无效（被删除），0代表中间节点，1代表头节点，因此插入节点默认为1，插入已存在节点默认为0
         uint64_t NextNode;//下一个节点location,默认值为0（无下一个节点）
     public:
-        Node(const int nid):Nid(nid),NidVNum(0),NextNode(0),Flag(1),Data("\0"){}
-        Node(const int nid,const char* nodedata);
-        Node(const int nid,const int flag):Nid(nid),NidVNum(0),Data("\0"),Flag(flag),NextNode(0){}
+        Node(const int nid):Nid(nid),NidVNum(0),NextNode(0),Flag(1){
+            for(int i=0;i<NodeDatalengthDef;++i) Data[i]=-1;
+        }
+        Node(const int nid,const int* nodedata, const int datasize);
+        Node(const int nid,const int flag):Nid(nid),NidVNum(0),Flag(flag),NextNode(0){
+            for(int i=0;i<NodeDatalengthDef;++i) Data[i]=-1;
+        }
         
         int GetId()const{return Nid;}
         int GetFlag()const{return Flag;}
         void SetFlag(const int& flag){Flag=flag;}
-        const char* GetData()const{return Data;}
-        void SetData(const char* data);
+        const int* GetData()const{return Data;}
+        void SetData(const int* nodedata,const int datasize);
         uint64_t GetNextNodeAddre()const{return NextNode;}
         void SetNextNodeAddre(const uint64_t& location){NextNode=location;}
         
         int GetDeg() const{return NidVNum;}
         int GetInDeg()const{return NidVNum;}
         int GetOutDeg()const{return NidVNum;}
+        const int* GetNbr()const{return NidV;}
+        const int* GerInNbr()const{return NidV;}
+        const int* GetOutNbr()const{return NidV;}
         int GetNbrNid(const int& NodeN)const{return NidV[NodeN];}
         int GetInNid(const int& NodeN)const{return GetNbrNid(NodeN);}
         int GetOutNid(const int& NodeN)const{return GetNbrNid(NodeN);}
@@ -106,7 +113,7 @@ public:
         Node& operator->()const{return *CurNode;}
         
         int GetId()const{return CurNode->GetId();}
-        const char* GetData()const{return CurNode->GetData();}
+        const int* GetData()const{return CurNode->GetData();}
         int GetFlag()const{return CurNode->GetFlag();}
         int GetDeg()const;
         int GetInDeg()const;
@@ -121,6 +128,14 @@ public:
         bool IsEmpty()const{return CurNode==NULL;}
         bool IsBegin()const{return (char*)CurNode==Begin;}
         bool IsEnd()const{return (char*)CurNode==End;}
+        
+        //针对一个节点而不是图上一个顶点
+        bool IsNodeEnd()const{return CurNode->GetNextNodeAddre()==0;}
+        void ToNextNode(){if(!IsNodeEnd()) CurNode=(Node*)(Begin+CurNode->GetNextNodeAddre());}
+        const int* GetCurNbr(int& Degree)const{
+            Degree=CurNode->GetDeg();
+            return CurNode->GetNbr();
+        }
     };
     class EdgeIter{
     private:
@@ -189,7 +204,8 @@ public:
     int GetEdgeNum()const{return EdgeNum;}
     int GetMxNid()const{return MxNid;}
     
-    int AddNode(const int& nid=-1,const char* data="");
+    int AddNode(const int& nid=-1);
+    int AddNode(const int& nid,const int* nodedata,const int datasize);
     void DelNode(const int& nid);
     void DelNode(const Node& node){DelNode(node.GetId());}
     
@@ -237,16 +253,14 @@ public:
     CuckooHash::IterPair GetNidEnd()const{return NodeHash.End();}
     
 };
-inline UNDirect_UNWeight_Graph::Node::Node(const int nid,const char* nodedata):Nid(nid),NidVNum(0),NextNode(0),Flag(1){
-    size_t length=strlen(nodedata);
-    if(length>=NodeDatalengthDef) length=NodeDatalengthDef-1;
-    memcpy(Data,nodedata,length);
-    Data[length]='\0';
+inline UNDirect_UNWeight_Graph::Node::Node(const int nid,const int* nodedata,const int datasize):Nid(nid),NidVNum(0),NextNode(0),Flag(1){
+    for(int i=0;i<NodeDatalengthDef;++i) Data[i]=-1;
+    int size=datasize>NodeDatalengthDef? NodeDatalengthDef:datasize;
+    for(int i=0;i<size;++i) Data[i]=nodedata[i];
 }
-inline void UNDirect_UNWeight_Graph::Node::SetData(const char *data){
-    size_t length=strlen(data);
-    memcpy(Data, data, length);
-    Data[length]='\0';
+inline void UNDirect_UNWeight_Graph::Node::SetData(const int *nodedata, const int datasize){
+    int size=datasize>NodeDatalengthDef? NodeDatalengthDef:datasize;
+    for(int i=0;i<size;++i) Data[i]=nodedata[i];
 }
 inline bool UNDirect_UNWeight_Graph::Node::IsNbrNid(const int &nid)const{
     for(int i=0;i<NidVNum;++i){
@@ -361,7 +375,7 @@ inline bool UNDirect_UNWeight_Graph::NodeIter::IsOutNid(const int &nid)const{
     }
     return temp->IsOutNid(nid);
 }
-UNDirect_UNWeight_Graph::UNDirect_UNWeight_Graph(Arena* arena):NodeTable(arena),NodeHash(32, 4),MxNid(1),NodeNum(0),EdgeNum(0),FreeNodeLocation(0),FreeNodeNum(0){
+UNDirect_UNWeight_Graph::UNDirect_UNWeight_Graph(Arena* arena):NodeTable(arena),NodeHash(32, 4),MxNid(0),NodeNum(0),EdgeNum(0),FreeNodeLocation(0),FreeNodeNum(0){
     if(NodeTable->EndPtr()!=NodeTable->BeginPtr()){
         Node* temp=(Node*)(NodeTable->BeginPtr());
         const char* end=NodeTable->EndPtr();
@@ -387,7 +401,7 @@ UNDirect_UNWeight_Graph::UNDirect_UNWeight_Graph(Arena* arena):NodeTable(arena),
    
 }
 
-int UNDirect_UNWeight_Graph::AddNode(const int& nid,const char* data){
+int UNDirect_UNWeight_Graph::AddNode(const int& nid){
     int newnid;
     if(nid==-1){newnid=MxNid;MxNid++;}
     else{
@@ -402,12 +416,40 @@ int UNDirect_UNWeight_Graph::AddNode(const int& nid,const char* data){
         uint64_t location=FreeNodeLocation;
         FreeNodeLocation=GetNodePtr(FreeNodeLocation)->GetNextNodeAddre();
         char* start=NodeTable->HeadPtr()+location;
-        Node* newnode=new(start) Node(newnid,data);
+        Node* newnode=new(start) Node(newnid);
         FreeNodeNum--;
         address=GetNodeLocation(newnode);
     }
     else{
-        Node * newnode=new(NodeTable) Node(newnid,data);
+        Node * newnode=new(NodeTable) Node(newnid);
+        address=GetNodeLocation(newnode);
+    }
+    NodeHash.Add(newnid,address);
+    NodeNum++;
+    return newnid;
+}
+
+int UNDirect_UNWeight_Graph::AddNode(const int& nid,const int* nodedata,const int datasize){
+    int newnid;
+    if(nid==-1){newnid=MxNid;MxNid++;}
+    else{
+        if(IsNode(nid)){return -1;}
+        else{
+            newnid=nid;
+            MxNid=MxNid>(nid+1)?MxNid:(nid+1);
+        }
+    }
+    uint64_t address;
+    if(FreeNodeNum>0){
+        uint64_t location=FreeNodeLocation;
+        FreeNodeLocation=GetNodePtr(FreeNodeLocation)->GetNextNodeAddre();
+        char* start=NodeTable->HeadPtr()+location;
+        Node* newnode=new(start) Node(newnid,nodedata,datasize);
+        FreeNodeNum--;
+        address=GetNodeLocation(newnode);
+    }
+    else{
+        Node * newnode=new(NodeTable) Node(newnid,nodedata,datasize);
         address=GetNodeLocation(newnode);
     }
     NodeHash.Add(newnid,address);

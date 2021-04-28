@@ -44,6 +44,8 @@
 		1DB615EF2568037000FB679E /* hashtable.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = hashtable.h; sourceTree = "<group>"; };
 		1DDD74A1259B10E400EC8EFA /* Attr.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Attr.h; sourceTree = "<group>"; };
 		1DDD74A2259C164F00EC8EFA /* hash.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = hash.h; sourceTree = "<group>"; };
+		1DEF1B492636506E00AD8824 /* SubgraphMatch_Graph.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SubgraphMatch_Graph.h; sourceTree = "<group>"; };
+		1DEF1B4B26390F8400AD8824 /* SubgroupMatch_Filter.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SubgroupMatch_Filter.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -79,6 +81,7 @@
 				1D763B2025FB442200F964C9 /* Hub_Label.h */,
 				1D86CD54254058C700E3ADC7 /* main.cpp */,
 				1D6F6B642574F13700941275 /* Direct_graph.h */,
+				1DEF1B492636506E00AD8824 /* SubgraphMatch_Graph.h */,
 				1DB615ED2567DF1B00FB679E /* basetable.h */,
 				1DDD74A2259C164F00EC8EFA /* hash.h */,
 				1DA90E43258705DB005F4F48 /* Direct_multigraph.h */,
@@ -96,6 +99,7 @@
 				1D53457726131C0900696979 /* UNDirect_Weight_Graph.h */,
 				1D53457926134C4C00696979 /* UNDirect_UNWeight_Graph.h */,
 				1D53457B26140A6500696979 /* CHL_Weight.h */,
+				1DEF1B4B26390F8400AD8824 /* SubgroupMatch_Filter.h */,
 			);
 			path = "NVM-Graph";
 			sourceTree = "<group>";

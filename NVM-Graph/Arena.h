@@ -12,7 +12,7 @@
 
 typedef unsigned int uint;
 
-const int NodeDatalengthDef=4;//默认节点标签最大长度是31个字节，最后一子节存'\0'
+const int NodeDatalengthDef=10;//默认节点标签最大长度是31个字节，最后一子节存'\0'
 const int EdgeDataLengthDef=32;//默认边标签最大长度
 const int InOutEidNumDef=10;//默认边数
 const size_t InOutEdgeNumDef=10;

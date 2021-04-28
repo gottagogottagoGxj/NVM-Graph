@@ -20,7 +20,7 @@ public:
     int key;
     uint64_t location;
 public:
-    Pair():tag(),key(),location(){}
+    Pair():tag(),key(-1),location(){}
     Pair(const Pair& p):tag(p.tag),key(p.key),location(p.location){}
     Pair(const uint32_t& t,const int& k,const uint64_t& l):tag(t),key(k),location(l){}
     Pair(MOut& Out){
