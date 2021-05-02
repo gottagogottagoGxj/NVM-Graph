@@ -11,6 +11,7 @@
 #include<vector>
 #include"SubgraphMatch_Graph.h"
 
+#define INVALID_VERTEX_ID -1
 
 class SubgraphMatch_Filter{
 public:
@@ -19,10 +20,14 @@ public:
     
     static void GenerateCFLFilterPlan(const SubgraphMatch_Graph& data_graph, const SubgraphMatch_Graph& query_graph, TreeNode *&tree,int *&order, int &level_count, int *&level_offset);
     
+    static bool CFLFilter(const SubgraphMatch_Graph& data_graph, const SubgraphMatch_Graph &query_graph, Arena* candidatetable, int **&candidates, int *&candidates_count,int *&order, TreeNode *&tree);
 private:
-    static void AllocateBuffer(const SubgraphMatch_Graph& data_graph,const SubgraphMatch_Graph& query_graph,Arena* table, int* candidate_count,int** candidate);
+    static void AllocateBuffer(const SubgraphMatch_Graph& data_graph,const SubgraphMatch_Graph& query_graph,Arena* table ,int** &candidate ,int* &candidate_count);
     static int SelectCFLFilterStartVertex(const SubgraphMatch_Graph &data_graph, const SubgraphMatch_Graph& query_graph);
-    
+    static void GenerateCandidates(const SubgraphMatch_Graph& data_graph, const SubgraphMatch_Graph& query_graph, int query_vertex,int *pivot_vertices, int pivot_vertices_count, int **candidates,int *candidates_count, int *flag, int *updated_flag);
+    static void PruneCandidates(const SubgraphMatch_Graph & data_graph, const SubgraphMatch_Graph & query_graph, int query_vertex,int *pivot_vertices, int pivot_vertices_count, int **candidates,int *candidates_count, int *flag, int *updated_flag);
+    static void CompactCandidates(int **&candidates, int *&candidates_count, int query_vertex_num);
+    static bool IsCandidateSetValid(int **&candidates, int *&candidates_count, int query_vertex_num);
 };
 
 void SubgraphMatch_Filter::ComputeCandidateWithLDF(const SubgraphMatch_Graph& data_graph,const SubgraphMatch_Graph& query_graph, const int& query_vertex,int& count,int* buffer){
@@ -89,13 +94,14 @@ void SubgraphMatch_Filter:: ComputeCandidateWithNLF(const SubgraphMatch_Graph& d
         }
 }
 
-void SubgraphMatch_Filter::AllocateBuffer(const SubgraphMatch_Graph& data_graph,const SubgraphMatch_Graph& query_graph,Arena* table, int* candidate_count,int** candidate){
+void SubgraphMatch_Filter::AllocateBuffer(const SubgraphMatch_Graph& data_graph,const SubgraphMatch_Graph& query_graph,Arena* table ,int** &candidate ,int* &candidate_count){
     int query_vertex_num=query_graph.GetGraph()->GetNodeNum();
     int candidate_num=data_graph.GetMaxLabelFrequency();
     candidate_count=new int[query_vertex_num];
+    candidate=new int*[query_vertex_num];
     memset(candidate_count, 0, sizeof(int)*query_vertex_num);
     for(int i=0;i<query_vertex_num;++i){
-        candidate[i]=(int*)table->AllocateBytes(sizeof(int)*candidate_num);
+        candidate[i]=(int*)(table->AllocateBytes(sizeof(int)*candidate_num));
     }
 }
 
@@ -131,7 +137,7 @@ void SubgraphMatch_Filter::GenerateCFLFilterPlan(const SubgraphMatch_Graph& data
         auto tempiter=nodeiter;
         
         do{
-            tempiter==nodeiter;
+            tempiter=nodeiter;
             int u_nbrs_count;
             const int* u_nbrs = nodeiter.GetCurNbr(u_nbrs_count);
             for (int j = 0; j < u_nbrs_count; ++j) {
@@ -214,6 +220,247 @@ int SubgraphMatch_Filter::SelectCFLFilterStartVertex(const SubgraphMatch_Graph &
 }
 
 
+void SubgraphMatch_Filter::GenerateCandidates(const SubgraphMatch_Graph& data_graph, const SubgraphMatch_Graph& query_graph, int query_vertex,int *pivot_vertices, int pivot_vertices_count, int **candidates,int *candidates_count, int *flag, int *updated_flag) {
+    auto query_vertex_iter=query_graph.GetGraph()->GetNI(query_vertex);
+    const int* query_vertex_label = query_vertex_iter.GetData();
+    int query_vertex_degree = query_vertex_iter.GetDeg();
+    
+    int query_vertex_nlflabelnum;
+    const int* query_vertex_nlf=query_graph.GetVertexNLF(query_vertex, query_vertex_nlflabelnum);
+    
+    int count = 0;
+    int updated_flag_count = 0;
+    for (int i = 0; i < pivot_vertices_count; ++i) {
+        int pivot_vertex = pivot_vertices[i];
 
+        for (int j = 0; j < candidates_count[pivot_vertex]; ++j) {
+            int v = candidates[pivot_vertex][j];
+
+            if (v == INVALID_VERTEX_ID)
+                continue;
+            auto viter=data_graph.GetGraph()->GetNI(v);
+            auto tempiter=viter;
+            do{
+                tempiter=viter;
+                int v_nbrs_count;
+                const int* v_nbrs = viter.GetCurNbr(v_nbrs_count);
+
+                for (int k = 0; k < v_nbrs_count; ++k) {
+                    int v_nbr = v_nbrs[k];
+                    auto v_nbr_iter=data_graph.GetGraph()->GetNI(v_nbr);
+                    const int* v_nbr_label = v_nbr_iter.GetData();
+                    int v_nbr_degree = v_nbr_iter.GetDeg();
+                    if(flag[v_nbr]==count && v_nbr_degree>=query_vertex_degree){
+                        bool v_nbr_flag=false;
+                        int l=0;
+                        while(l<NodeDatalengthDef && v_nbr_label[l]!=-1){
+                            if(v_nbr_label[l]==query_vertex_label[0]){
+                                v_nbr_flag=true;
+                                break;
+                            }
+                            l++;
+                        }
+                        if(v_nbr_flag){
+                            flag[v_nbr]+=1;
+                            
+                            if(count==0){
+                                updated_flag[updated_flag_count++]=v_nbr;
+                            }
+                        }
+                    }
+            }
+                viter.ToNextNode();
+            }while(!tempiter.IsNodeEnd());
+        }
+
+        count += 1;
+    }
+
+    for (int i = 0; i < updated_flag_count; ++i) {
+        int v = updated_flag[i];
+        if (flag[v] == count) {
+            int v_nlflabelnum;
+            const int* v_nlf=data_graph.GetVertexNLF(v, v_nlflabelnum);
+            if(v_nlflabelnum>=query_vertex_nlflabelnum){
+                int j=0,k=0;
+                bool v_flag=true;
+                while(j<query_vertex_nlflabelnum && k<v_nlflabelnum){
+                    if(query_vertex_nlf[j]< v_nlf[k]){
+                        v_flag=false;
+                        break;
+                    }
+                    if(query_vertex_nlf[j]> v_nlf[k]) k++;
+                    else{
+                        if(query_vertex_nlf[j+query_vertex_nlflabelnum]>v_nlf[k+v_nlflabelnum]){
+                            v_flag=false;
+                            break;
+                        }
+                        j++;
+                        k++;
+                    }
+                    
+                }
+                if(v_flag) candidates[query_vertex][candidates_count[query_vertex]++]=v;
+            }
+        }
+    }
+
+    for (int i = 0; i < updated_flag_count; ++i) {
+        int v = updated_flag[i];
+        flag[v] = 0;
+    }
+}
+
+void SubgraphMatch_Filter::PruneCandidates(const SubgraphMatch_Graph & data_graph, const SubgraphMatch_Graph & query_graph, int query_vertex,int *pivot_vertices, int pivot_vertices_count, int **candidates,int *candidates_count, int *flag, int *updated_flag) {
+    auto query_vertex_iter=query_graph.GetGraph()->GetNI(query_vertex);
+    const int* query_vertex_label = query_vertex_iter.GetData();
+    int query_vertex_degree = query_vertex_iter.GetDeg();
+
+    int count = 0;
+    int updated_flag_count = 0;
+    for (int i = 0; i < pivot_vertices_count; ++i) {
+        int pivot_vertex = pivot_vertices[i];
+
+        for (int j = 0; j < candidates_count[pivot_vertex]; ++j) {
+            int v = candidates[pivot_vertex][j];
+
+            if (v == INVALID_VERTEX_ID)
+                continue;
+            
+            auto v_iter=data_graph.GetGraph()->GetNI(v);
+            auto temp_iter=v_iter;
+            
+            do{
+                temp_iter=v_iter;
+                int v_nbrs_count;
+                const int* v_nbrs = v_iter.GetCurNbr(v_nbrs_count);
+
+                for (int k = 0; k < v_nbrs_count; ++k) {
+                    int v_nbr = v_nbrs[k];
+                    auto v_nbr_iter=data_graph.GetGraph()->GetNI(v_nbr);
+                    const int* v_nbr_label = v_nbr_iter.GetData();
+                    int v_nbr_degree = v_nbr_iter.GetDeg();
+
+                    if (flag[v_nbr] == count && v_nbr_degree >= query_vertex_degree) {
+                        bool v_nbr_flag=false;
+                        int l=0;
+                        while(l<NodeDatalengthDef && v_nbr_label[l]!=-1){
+                            if(v_nbr_label[l]==query_vertex_label[0]){
+                                v_nbr_flag=true;
+                                break;
+                            }
+                            l++;
+                        }
+                        if(v_nbr_flag){
+                            flag[v_nbr] += 1;
+
+                            if (count == 0) {
+                            updated_flag[updated_flag_count++] = v_nbr;
+                            }
+                        }
+                    }
+                }
+                v_iter.ToNextNode();
+            }while(!temp_iter.IsNodeEnd());
+        }
+
+        count += 1;
+    }
+
+    for (int i = 0; i < candidates_count[query_vertex]; ++i) {
+        int v = candidates[query_vertex][i];
+        if (v == INVALID_VERTEX_ID)
+            continue;
+
+        if (flag[v] != count) {
+            candidates[query_vertex][i] = INVALID_VERTEX_ID;
+        }
+    }
+
+    for (int i = 0; i < updated_flag_count; ++i) {
+        int v = updated_flag[i];
+        flag[v] = 0;
+    }
+}
+
+
+
+bool SubgraphMatch_Filter::CFLFilter(const SubgraphMatch_Graph& data_graph, const SubgraphMatch_Graph &query_graph, Arena* candidatetable, int **&candidates, int *&candidates_count,int *&order, TreeNode *&tree) {
+    AllocateBuffer(data_graph, query_graph, candidatetable, candidates, candidates_count);
+    int level_count;
+    int* level_offset;
+    GenerateCFLFilterPlan(data_graph, query_graph, tree, order, level_count, level_offset);
+
+    int start_vertex = order[0];
+    ComputeCandidateWithNLF(data_graph, query_graph, start_vertex, candidates_count[start_vertex], candidates[start_vertex]);
+
+    int* updated_flag = new int[data_graph.GetGraph()->GetNodeNum()];
+    int* flag = new int[data_graph.GetGraph()->GetNodeNum()];
+    std::fill(flag, flag + data_graph.GetGraph()->GetNodeNum(), 0);
+
+    // Top-down generation.
+    for (int i = 1; i < level_count; ++i) {
+        // Forward generation.
+        for (int j = level_offset[i]; j < level_offset[i + 1]; ++j) {
+            int query_vertex = order[j];
+            TreeNode& node = tree[query_vertex];
+            GenerateCandidates(data_graph, query_graph, query_vertex, node.bn_, node.bn_count_, candidates, candidates_count, flag, updated_flag);
+        }
+
+        // Backward prune.
+        for (int j = level_offset[i + 1] - 1; j >= level_offset[i]; --j) {
+            int query_vertex = order[j];
+            TreeNode& node = tree[query_vertex];
+
+            if (node.fn_count_ > 0) {
+                PruneCandidates(data_graph, query_graph, query_vertex, node.fn_, node.fn_count_, candidates, candidates_count, flag, updated_flag);
+            }
+        }
+    }
+
+    // Bottom-up refinement.
+    for (int i = level_count - 2; i >= 0; --i) {
+        for (int j = level_offset[i]; j < level_offset[i + 1]; ++j) {
+            int query_vertex = order[j];
+            TreeNode& node = tree[query_vertex];
+
+            if (node.under_level_count_ > 0) {
+                PruneCandidates(data_graph, query_graph, query_vertex, node.under_level_, node.under_level_count_, candidates, candidates_count, flag, updated_flag);
+            }
+        }
+    }
+
+
+    CompactCandidates(candidates, candidates_count, query_graph.GetGraph()->GetNodeNum());
+
+    delete[] updated_flag;
+    delete[] flag;
+    delete[] level_offset;
+    return IsCandidateSetValid(candidates, candidates_count, query_graph.GetGraph()->GetNodeNum());
+}
+
+void SubgraphMatch_Filter::CompactCandidates(int **&candidates, int *&candidates_count, int query_vertex_num) {
+    for (int i = 0; i < query_vertex_num; ++i) {
+        int query_vertex = i;
+        int next_position = 0;
+        for (int j = 0; j < candidates_count[query_vertex]; ++j) {
+            int data_vertex = candidates[query_vertex][j];
+
+            if (data_vertex != INVALID_VERTEX_ID) {
+                candidates[query_vertex][next_position++] = data_vertex;
+            }
+        }
+
+        candidates_count[query_vertex] = next_position;
+    }
+}
+
+bool SubgraphMatch_Filter::IsCandidateSetValid(int **&candidates, int *&candidates_count, int query_vertex_num) {
+    for (int i = 0; i < query_vertex_num; ++i) {
+        if (candidates_count[i] == 0)
+            return false;
+    }
+    return true;
+}
 
 #endif /* SubgroupMatch_Filter_h */

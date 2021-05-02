@@ -53,7 +53,27 @@ void UNDirect_UNWeight_Test(){
     SubgraphMatch_Graph QueryMatchGraph(&QueryGraph,&matchtable,&matchtable);
     
     QueryMatchGraph.BuildCoreTable();
-    for(int i=0;i<QueryGraph.GetNodeNum();++i) cout<<QueryMatchGraph.GetCoreValue(i)<<endl;
+    
+    int ** candidate;
+    int* candidate_count;
+    int* order;
+    TreeNode* tree;
+    SubgraphMatch_Filter::CFLFilter(DataMatchGraph, QueryMatchGraph, &matchtable, candidate, candidate_count, order, tree);
+    
+    for(int i=0;i<QueryGraph.GetNodeNum();++i){
+        cout<<candidate_count[i]<<":";
+        for(int j=0;j<candidate_count[i];++j){
+            cout<<candidate[i][j]<<" ";
+        }
+        cout<<endl;
+    }
+    
+    delete [] candidate;
+    delete[] candidate_count;
+    delete[] order;
+    delete[] tree;
+    
+    
     
     
    
