@@ -200,7 +200,7 @@ public:
 public:
     UNDirect_UNWeight_Graph(Arena* arena);
     bool IsNode(const int& nid)const{return NodeHash.IsIn(nid);}
-    size_t GetNodeNum()const{return NodeNum;}
+    int GetNodeNum()const{return NodeNum;}
     int GetEdgeNum()const{return EdgeNum;}
     int GetMxNid()const{return MxNid;}
     

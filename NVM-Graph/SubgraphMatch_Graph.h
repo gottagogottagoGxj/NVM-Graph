@@ -12,6 +12,7 @@
 #include<map>
 #include<queue>
 #include<memory>
+#include<vector>
 #include"Arena.h"
 #include "UNDirect_UNWeight_Graph.h"
 
@@ -57,6 +58,28 @@ public:
         bn_ = new int[size];
         fn_ = new int[size];
         children_ = new int[size];
+    }
+};
+
+class Edges {
+public:
+    int* offset_;
+    int* edge_;
+    int vertex_count_;
+    int edge_count_;
+    int max_degree_;
+public:
+    Edges() {
+        offset_ = NULL;
+        edge_ = NULL;
+        vertex_count_ = 0;
+        edge_count_ = 0;
+        max_degree_ = 0;
+    }
+
+    ~Edges() {
+        delete[] offset_;
+        delete[] edge_;
     }
 };
 
@@ -128,6 +151,7 @@ public:
     static void GetKCore(const SubgraphMatch_Graph& graph, int *core_table);
     static void BfsTraversal(const SubgraphMatch_Graph& graph, int root_vertex, TreeNode *&tree, int *&bfs_order);
     static void DfsTraversal(TreeNode* tree, int root_vertex, int node_num, int* &dfs_order);
+    static void BuildTables(const UNDirect_UNWeight_Graph & data_graph, const UNDirect_UNWeight_Graph& query_graph, int **candidates, int *candidates_count,Edges ***edge_matrix);//建立候选集的邻接表
 private:
     static void dfs(TreeNode* tree, int cur_vertex, int* dfs_order, int& count);
 };
@@ -271,6 +295,142 @@ void SubgraphMatch_GraphOperations::dfs(TreeNode *tree, int cur_vertex, int *dfs
     for (int i = 0; i < tree[cur_vertex].children_count_; ++i) {
         dfs(tree, tree[cur_vertex].children_[i], dfs_order, count);
     }
+}
+
+
+void SubgraphMatch_GraphOperations::BuildTables(const UNDirect_UNWeight_Graph & data_graph, const UNDirect_UNWeight_Graph& query_graph, int **candidates, int *candidates_count,Edges ***edge_matrix) {
+    int query_vertices_num = query_graph.GetNodeNum();
+    int* flag = new int[data_graph.GetNodeNum()];
+    int* updated_flag = new int[data_graph.GetNodeNum()];
+    std::fill(flag, flag + data_graph.GetNodeNum(), 0);
+
+    for (int i = 0; i < query_vertices_num; ++i) {
+        for (int j = 0; j < query_vertices_num; ++j) {
+            edge_matrix[i][j] = NULL;
+        }
+    }
+
+    std::vector<int> build_table_order(query_vertices_num);
+    for (int i = 0; i < query_vertices_num; ++i) {
+        build_table_order[i] = i;
+    }
+
+    std::sort(build_table_order.begin(), build_table_order.end(), [query_graph](int l, int r) {
+        if (query_graph.GetNI(l).GetDeg() == query_graph.GetNI(r).GetDeg()) {
+            return l < r;
+        }
+        return query_graph.GetNI(l).GetDeg() > query_graph.GetNI(r).GetDeg();
+    });
+
+    std::vector<int> temp_edges(data_graph.GetEdgeNum() * 2);
+
+    for (auto u : build_table_order) {
+        auto u_iter=query_graph.GetNI(u);
+        auto u_temp_iter=u_iter;
+        int updated_flag_count = 0;
+        for (int j = 0; j < candidates_count[u]; ++j) {
+            int v = candidates[u][j];
+            flag[v] = j + 1;
+            updated_flag[updated_flag_count++] = v;
+        }
+        
+        do{
+            u_temp_iter=u_iter;
+            int u_nbrs_count;
+            const int* u_nbrs = u_iter.GetCurNbr(u_nbrs_count);
+            for (int i = 0; i < u_nbrs_count; ++i) {
+                int u_nbr = u_nbrs[i];
+                if (edge_matrix[u][u_nbr] != NULL)
+                    continue;
+
+                
+                edge_matrix[u_nbr][u] = new Edges;
+                edge_matrix[u_nbr][u]->vertex_count_ = candidates_count[u_nbr];
+                edge_matrix[u_nbr][u]->offset_ = new int[candidates_count[u_nbr] + 1];
+
+                edge_matrix[u][u_nbr] = new Edges;
+                edge_matrix[u][u_nbr]->vertex_count_ = candidates_count[u];
+                edge_matrix[u][u_nbr]->offset_ = new int[candidates_count[u] + 1];
+                std::fill(edge_matrix[u][u_nbr]->offset_, edge_matrix[u][u_nbr]->offset_ + candidates_count[u] + 1, 0);
+
+                int local_edge_count = 0;
+                int local_max_degree = 0;
+
+                for (int j = 0; j < candidates_count[u_nbr]; ++j) {
+                    int v = candidates[u_nbr][j];
+                    edge_matrix[u_nbr][u]->offset_[j] = local_edge_count;
+                    
+                    auto v_iter=data_graph.GetNI(v);
+                    auto temp_v_iter=v_iter;
+                    int local_degree = 0;
+                    
+                    do{
+                        temp_v_iter=v_iter;
+                        int v_nbrs_count;
+                        const int* v_nbrs = v_iter.GetCurNbr(v_nbrs_count);
+
+                        for (int k = 0; k < v_nbrs_count; ++k) {
+                            int v_nbr = v_nbrs[k];
+
+                            if (flag[v_nbr] != 0) {
+                                int position = flag[v_nbr] - 1;
+                                temp_edges[local_edge_count++] = position;
+                                edge_matrix[u][u_nbr]->offset_[position + 1] += 1;
+                                local_degree += 1;
+                            }
+                        }
+                        v_iter.ToNextNode();
+                    }while(!temp_v_iter.IsNodeEnd());
+
+                    if (local_degree > local_max_degree) {
+                        local_max_degree = local_degree;
+                    }
+                }
+
+                edge_matrix[u_nbr][u]->offset_[candidates_count[u_nbr]] = local_edge_count;
+                edge_matrix[u_nbr][u]->max_degree_ = local_max_degree;
+                edge_matrix[u_nbr][u]->edge_count_ = local_edge_count;
+                edge_matrix[u_nbr][u]->edge_ = new int[local_edge_count];
+                std::copy(temp_edges.begin(), temp_edges.begin() + local_edge_count, edge_matrix[u_nbr][u]->edge_);
+
+                edge_matrix[u][u_nbr]->edge_count_ = local_edge_count;
+                edge_matrix[u][u_nbr]->edge_ = new int[local_edge_count];
+
+                local_max_degree = 0;
+                for (int j = 1; j <= candidates_count[u]; ++j) {
+                    if (edge_matrix[u][u_nbr]->offset_[j] > local_max_degree) {
+                        local_max_degree = edge_matrix[u][u_nbr]->offset_[j];
+                    }
+                    edge_matrix[u][u_nbr]->offset_[j] += edge_matrix[u][u_nbr]->offset_[j - 1];
+                }
+
+                edge_matrix[u][u_nbr]->max_degree_ = local_max_degree;
+
+                for (int j = 0; j < candidates_count[u_nbr]; ++j) {
+                    int begin = j;
+                    for (int k = edge_matrix[u_nbr][u]->offset_[begin]; k < edge_matrix[u_nbr][u]->offset_[begin + 1]; ++k) {
+                        int end = edge_matrix[u_nbr][u]->edge_[k];
+
+                        edge_matrix[u][u_nbr]->edge_[edge_matrix[u][u_nbr]->offset_[end]++] = begin;
+                    }
+                }
+
+                for (int j = candidates_count[u]; j >= 1; --j) {
+                    edge_matrix[u][u_nbr]->offset_[j] = edge_matrix[u][u_nbr]->offset_[j - 1];
+                }
+                edge_matrix[u][u_nbr]->offset_[0] = 0;
+            }
+            
+            u_iter.ToNextNode();
+        }while(!u_temp_iter.IsNodeEnd());
+
+        for (int i = 0; i < updated_flag_count; ++i) {
+            int v = updated_flag[i];
+            flag[v] = 0;
+        }
+    }
+    delete[] flag;
+    delete[] updated_flag;
 }
 
 

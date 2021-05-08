@@ -17,6 +17,7 @@
 #include<sstream>
 #include"UNDirect_UNWeight_Graph.h"
 #include"SubgroupMatch_Filter.h"
+#include"SubgraphMatch_Query.h"
 using namespace std;
 
 void UNDirect_UNWeight_Test();
@@ -41,8 +42,8 @@ void UNDirect_UNWeight_Test(){
     Arena dataarena(UNDirect_UNWeight_Graph::GetNodeSize(),1024*1024);
     Arena queryarena(UNDirect_UNWeight_Graph::GetNodeSize(),1024*1024);
     UNDirect_UNWeight_Graph DataGraph(&dataarena),QueryGraph(&queryarena);
-    const char* querygraphpath="/Users/jiangqingyuejinren/Desktop/参考代码/子图匹配/SubgraphMatching-master/test/sample_dataset/query2_positive.graph";
-    const char* datagraphpath="/Users/jiangqingyuejinren/Desktop/参考代码/子图匹配/SubgraphMatching-master/test/sample_dataset/test_case_1.graph";
+    const char* querygraphpath="query2_positive.graph";
+    const char* datagraphpath="test_case_1.graph";
     LoadSubgraphMatchHPRDData(DataGraph,datagraphpath);
     LoadSubgraphMatchHPRDData(QueryGraph,querygraphpath);
   
@@ -59,24 +60,44 @@ void UNDirect_UNWeight_Test(){
     int* order;
     TreeNode* tree;
     SubgraphMatch_Filter::CFLFilter(DataMatchGraph, QueryMatchGraph, &matchtable, candidate, candidate_count, order, tree);
-    
+    Edges ***edge_matrix=NULL;
+    edge_matrix=new Edges**[QueryGraph.GetNodeNum()];
+    for(int i=0;i<QueryGraph.GetNodeNum();++i) edge_matrix[i]=new Edges*[QueryGraph.GetNodeNum()];
     for(int i=0;i<QueryGraph.GetNodeNum();++i){
-        cout<<candidate_count[i]<<":";
-        for(int j=0;j<candidate_count[i];++j){
-            cout<<candidate[i][j]<<" ";
+        for(int j=0;j<QueryGraph.GetNodeNum();++j){
+            edge_matrix[i][j]=NULL;
         }
-        cout<<endl;
     }
     
-    delete [] candidate;
+    SubgraphMatch_GraphOperations::BuildTables(*DataMatchGraph.GetGraph(), *QueryMatchGraph.GetGraph(),candidate, candidate_count, edge_matrix);
+    
+    int* query_order;
+    int* query_pivot;
+    
+    SubgraphMatch_Query::GenerateCFLQueryPlan(DataMatchGraph, QueryMatchGraph, edge_matrix, query_order, query_pivot, tree, order, candidate_count);
+    
+    size_t call_count=0;
+    SubgraphMatch_Query::ExploreGraph(DataGraph, QueryGraph, edge_matrix, candidate, candidate_count, query_order, query_pivot, 1000, call_count);
+    cout<<call_count<<endl;
+    
+    delete[] candidate;
     delete[] candidate_count;
     delete[] order;
     delete[] tree;
+    delete[] query_order;
+    delete[] query_pivot;
+    
+    if(edge_matrix!=NULL){
+        for(int i=0;i<QueryGraph.GetNodeNum();++i){
+            for(int j=0;j<QueryGraph.GetNodeNum();++j){
+                if(edge_matrix[i][j]!=NULL) delete edge_matrix[i][j];
+            }
+            delete[] edge_matrix[i];
+        }
+        delete [] edge_matrix;
+    }
     
     
-    
-    
-   
 }
 
 void LoadSubgraphMatchHPRDData(UNDirect_UNWeight_Graph& graph,const char* Path){
