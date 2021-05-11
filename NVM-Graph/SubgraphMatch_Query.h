@@ -8,11 +8,33 @@
 #ifndef SubgraphMatch_Query_h
 #define SubgraphMatch_Query_h
 #include"SubgraphMatch_Graph.h"
+#include <queue>
+
+auto extendable_vertex_compare = [](std::pair<std::pair<int, int>, int> l, std::pair<std::pair<int, int>, int> r) {
+    if (l.first.second == 1 && r.first.second != 1) {
+        return true;
+    }
+    else if (l.first.second != 1 && r.first.second == 1) {
+        return false;
+    }
+    else
+    {
+        return l.second > r.second;
+    }
+};
+
+typedef std::priority_queue<std::pair<std::pair<int, int>, int>, std::vector<std::pair<std::pair<int, int>, int>>,
+        decltype(extendable_vertex_compare)> dpiso_min_pq;
+
 
 class SubgraphMatch_Query{
 public:
     static void GenerateCFLQueryPlan(const SubgraphMatch_Graph& data_graph, const SubgraphMatch_Graph& query_graph, Edges ***edge_matrix,int *&order, int *&pivot, TreeNode *tree, int *bfs_order, int *candidates_count);
     static size_t ExploreGraph(const UNDirect_UNWeight_Graph& data_graph, const UNDirect_UNWeight_Graph& query_graph, Edges ***edge_matrix, int **candidates,int *candidates_count, int *order, int *pivot, size_t output_limit_num, size_t &call_count);
+    static size_t ExecuteQuery(const UNDirect_UNWeight_Graph& data_graph, const UNDirect_UNWeight_Graph& query_graph, Edges ***edge_matrix, int **candidates,int *candidates_count, int *order, int *pivot, size_t output_limit_num, size_t &call_count);
+    static void GenerateDSPisoQueryPlan(const UNDirect_UNWeight_Graph& query_graph, Edges ***edge_matrix, int *&order, int *&pivot,TreeNode *tree,int *bfs_order, int *candidates_count, int **&weight_array);
+    static size_t ExploreDPisoStyle(const UNDirect_UNWeight_Graph& data_graph, const UNDirect_UNWeight_Graph& query_graph, TreeNode *tree,Edges ***edge_matrix, int **candidates, int *candidates_count,int **weight_array, int *order, size_t output_limit_num,size_t &call_count);
+    
 private:
     static void estimatePathEmbeddsingsNum(std::vector<int> &path, Edges ***edge_matrix, std::vector<size_t> &estimated_embeddings_num);
     static int generateNoneTreeEdgesCount(const UNDirect_UNWeight_Graph& query_graph, TreeNode *tree_node, std::vector<int> &path);
@@ -20,9 +42,15 @@ private:
     static void generateTreePaths(const UNDirect_UNWeight_Graph& query_graph, TreeNode *tree_node, int cur_vertex,std::vector<int> &cur_tree_path, std::vector<std::vector<int>> &tree_paths);
     static void generateLeaves(const UNDirect_UNWeight_Graph& query_graph, std::vector<int> &leaves);
     static void generateBN(const UNDirect_UNWeight_Graph& query_graph, int *order, int *pivot, int **&bn, int *&bn_count);
+    static void generateBN(const UNDirect_UNWeight_Graph& query_graph, int *order, int **&bn, int *&bn_count);
     static void allocateBuffer(const UNDirect_UNWeight_Graph& data_graph, const UNDirect_UNWeight_Graph& query_graph, int *candidates_count, int *&idx,int *&idx_count, int *&embedding, int *&idx_embedding, int *&temp_buffer,int **&valid_candidate_idx, bool *&visited_vertices);
     static void releaseBuffer(int query_vertices_num, int *idx, int *idx_count, int *embedding, int *idx_embedding,int *temp_buffer, int **valid_candidate_idx, bool *visited_vertices, int **bn,int *bn_count);
     static void generateValidCandidateIndex(const UNDirect_UNWeight_Graph& data_graph, int depth, int *embedding, int *idx_embedding,int *idx_count, int **valid_candidate_index, Edges ***edge_matrix,bool *visited_vertices, int **bn, int *bn_cnt, int *order, int *pivot,int **candidates);
+    static void generateValidCandidateIndex(int depth, int *idx_embedding, int *idx_count, int **valid_candidate_index,Edges ***edge_matrix, int **bn, int *bn_cnt,int *order,int *pivot,int *&temp_buffer);
+    static void generateValidCandidateIndex(int depth, int *idx_embedding, int *idx_count, int **valid_candidate_index,Edges ***edge_matrix, int **bn, int *bn_cnt,int *order,int *&temp_buffer);
+    static void generateValidCandidateIndex(int u, int *idx_embedding, int *idx_count, int *&valid_candidate_index,Edges ***edge_matrix, int *bn, int bn_cnt, int *&temp_buffer);
+    static void updateExtendableVertex(int *idx_embedding, int *idx_count, int **valid_candidate_index, Edges ***edge_matrix, int *&temp_buffer, int **weight_array, TreeNode *tree, int mapped_vertex, int *extendable, std::vector<dpiso_min_pq> &vec_rank_queue, const UNDirect_UNWeight_Graph& query_graph);
+    static void restoreExtendableVertex(TreeNode *tree, int unmapped_vertex,int *extendable);
 };
 
 
@@ -390,6 +418,78 @@ size_t SubgraphMatch_Query::ExploreGraph(const UNDirect_UNWeight_Graph& data_gra
 }
 
 
+size_t SubgraphMatch_Query::ExecuteQuery(const UNDirect_UNWeight_Graph& data_graph, const UNDirect_UNWeight_Graph& query_graph, Edges ***edge_matrix, int **candidates,int *candidates_count, int *order, int *pivot, size_t output_limit_num, size_t &call_count) {
+    // Generate the bn.
+    int **bn;
+    int *bn_count;
+    generateBN(query_graph, order, pivot, bn, bn_count);
+
+    // Allocate the memory buffer.
+    int *idx;
+    int *idx_count;
+    int *embedding;
+    int *idx_embedding;
+    int *temp_buffer;
+    int **valid_candidate_idx;
+    bool *visited_vertices;
+    allocateBuffer(data_graph, query_graph, candidates_count, idx, idx_count, embedding, idx_embedding,temp_buffer, valid_candidate_idx, visited_vertices);
+    // Evaluate the query.
+    size_t embedding_cnt = 0;
+    int cur_depth = 0;
+    int max_depth = query_graph.GetNodeNum();
+    int start_vertex = order[0];
+
+    idx[cur_depth] = 0;
+    idx_count[cur_depth] = candidates_count[start_vertex];
+
+    for (int i = 0; i < idx_count[cur_depth]; ++i) {
+        valid_candidate_idx[cur_depth][i] = i;
+    }
+
+    while (true) {
+        while (idx[cur_depth] < idx_count[cur_depth]) {
+            int valid_idx = valid_candidate_idx[cur_depth][idx[cur_depth]];
+            int u = order[cur_depth];
+            int v = candidates[u][valid_idx];
+
+            embedding[u] = v;
+            idx_embedding[u] = valid_idx;
+            visited_vertices[v] = true;
+            idx[cur_depth] += 1;
+
+            if (cur_depth == max_depth - 1) {
+                embedding_cnt += 1;
+                visited_vertices[v] = false;
+                if (embedding_cnt >= output_limit_num) {
+                    goto EXIT;
+                }
+            } else {
+                call_count += 1;
+                cur_depth += 1;
+                idx[cur_depth] = 0;
+                generateValidCandidateIndex(cur_depth, idx_embedding,idx_count, valid_candidate_idx, edge_matrix, bn, bn_count, order, pivot, temp_buffer);
+            }
+        }
+
+        cur_depth -= 1;
+        if (cur_depth < 0)
+            break;
+        else
+            visited_vertices[embedding[order[cur_depth]]] = false;
+    }
+
+
+    // Release the buffer.
+    EXIT:
+    releaseBuffer(max_depth, idx, idx_count, embedding, idx_embedding, temp_buffer, valid_candidate_idx,
+                  visited_vertices,
+                  bn, bn_count);
+
+    return embedding_cnt;
+}
+
+
+
 
 void SubgraphMatch_Query::generateBN(const UNDirect_UNWeight_Graph& query_graph, int *order, int *pivot, int **&bn, int *&bn_count) {
     int query_vertices_num = query_graph.GetNodeNum();
@@ -418,6 +518,39 @@ void SubgraphMatch_Query::generateBN(const UNDirect_UNWeight_Graph& query_graph,
                     bn[i][bn_count[i]++] = nbr;
                 }
             }
+            vertex_iter.ToNextNode();
+        }while(!temp_iter.IsNodeEnd());
+
+        visited_vertices[vertex] = true;
+    }
+}
+void SubgraphMatch_Query::generateBN(const UNDirect_UNWeight_Graph& query_graph, int *order, int **&bn, int *&bn_count) {
+    int query_vertices_num = query_graph.GetNodeNum();
+    bn_count = new int[query_vertices_num];
+    std::fill(bn_count, bn_count + query_vertices_num, 0);
+    bn = new int *[query_vertices_num];
+    for (int i = 0; i < query_vertices_num; ++i) {
+        bn[i] = new int[query_vertices_num];
+    }
+
+    std::vector<bool> visited_vertices(query_vertices_num, false);
+    visited_vertices[order[0]] = true;
+    for (int i = 1; i < query_vertices_num; ++i) {
+        int vertex = order[i];
+
+        auto vertex_iter=query_graph.GetNI(vertex);
+        auto temp_iter=vertex_iter;
+        do{
+            temp_iter=vertex_iter;
+            int nbrs_cnt;
+            const int *nbrs = vertex_iter.GetCurNbr(nbrs_cnt);
+            for (int j = 0; j < nbrs_cnt; ++j) {
+                int nbr = nbrs[j];
+
+                if (visited_vertices[nbr]) {
+                    bn[i][bn_count[i]++] = nbr;
+                }
+        }
             vertex_iter.ToNextNode();
         }while(!temp_iter.IsNodeEnd());
 
@@ -513,6 +646,279 @@ void SubgraphMatch_Query::generateValidCandidateIndex(const UNDirect_UNWeight_Gr
     }
 
     idx_count[depth] = valid_candidate_index_count;
+}
+
+void SubgraphMatch_Query::generateValidCandidateIndex(int depth, int *idx_embedding, int *idx_count, int **valid_candidate_index,Edges ***edge_matrix, int **bn, int *bn_cnt,int *order,int *pivot,int *&temp_buffer){
+    int u = order[depth];
+    int pivot_vertex = pivot[depth];
+    int idx_id = idx_embedding[pivot_vertex];
+    Edges &edge = *edge_matrix[pivot_vertex][u];
+    int count = edge.offset_[idx_id + 1] - edge.offset_[idx_id];
+    int *candidate_idx = edge.edge_ + edge.offset_[idx_id];
+    
+    memcpy(valid_candidate_index[depth], candidate_idx, count*sizeof(int));
+    int valid_candidate_index_count = count;
+    int temp_count;
+    for(int i=0;i<bn_cnt[depth];++i){
+        int current_bn=bn[depth][i];
+        Edges& current_edge=*edge_matrix[current_bn][u];
+        int current_index_id=idx_embedding[current_bn];
+        int current_candidate_count=current_edge.offset_[current_index_id+1]-current_edge.offset_[current_index_id];
+        int* current_candidate=current_edge.edge_+current_edge.offset_[current_index_id];
+        SubgraphMatch_GraphOperations::ComputeCandidateSetIntersect(current_candidate, current_candidate_count, valid_candidate_index[depth], valid_candidate_index_count, temp_buffer, temp_count);
+        std::swap(temp_buffer, valid_candidate_index[depth]);
+        valid_candidate_index_count=temp_count;
+    }
+    idx_count[depth]=valid_candidate_index_count;
+}
+
+void SubgraphMatch_Query::generateValidCandidateIndex(int depth, int *idx_embedding, int *idx_count, int **valid_candidate_index,Edges ***edge_matrix, int **bn, int *bn_cnt,int *order,int *&temp_buffer){
+    int u = order[depth];
+    int previous_bn = bn[depth][0];
+    int previous_index_id = idx_embedding[previous_bn];
+    int valid_candidates_count = 0;
+    Edges& previous_edge = *edge_matrix[previous_bn][u];
+
+    valid_candidates_count = previous_edge.offset_[previous_index_id + 1] - previous_edge.offset_[previous_index_id];
+    int* previous_candidates = previous_edge.edge_ + previous_edge.offset_[previous_index_id];
+
+    memcpy(valid_candidate_index[depth], previous_candidates, valid_candidates_count * sizeof(int));
+
+    int temp_count;
+    for (int i = 1; i < bn_cnt[depth]; ++i) {
+        int current_bn = bn[depth][i];
+        Edges& current_edge = *edge_matrix[current_bn][u];
+        int current_index_id = idx_embedding[current_bn];
+
+        int current_candidates_count = current_edge.offset_[current_index_id + 1] - current_edge.offset_[current_index_id];
+        int* current_candidates = current_edge.edge_ + current_edge.offset_[current_index_id];
+
+        SubgraphMatch_GraphOperations::ComputeCandidateSetIntersect(current_candidates, current_candidates_count, valid_candidate_index[depth], valid_candidates_count,temp_buffer, temp_count);
+
+        std::swap(temp_buffer, valid_candidate_index[depth]);
+        valid_candidates_count = temp_count;
+    }
+
+    idx_count[depth] = valid_candidates_count;
+}
+
+void SubgraphMatch_Query::generateValidCandidateIndex(int u, int *idx_embedding, int *idx_count, int *&valid_candidate_index,Edges ***edge_matrix, int *bn, int bn_cnt, int *&temp_buffer) {
+    int previous_bn = bn[0];
+    Edges &previous_edge = *edge_matrix[previous_bn][u];
+    int previous_index_id = idx_embedding[previous_bn];
+
+    int previous_candidates_count =
+            previous_edge.offset_[previous_index_id + 1] - previous_edge.offset_[previous_index_id];
+    int *previous_candidates = previous_edge.edge_ + previous_edge.offset_[previous_index_id];
+
+    int valid_candidates_count = 0;
+    for (int i = 0; i < previous_candidates_count; ++i) {
+        valid_candidate_index[valid_candidates_count++] = previous_candidates[i];
+    }
+
+    int temp_count;
+    for (int i = 1; i < bn_cnt; ++i) {
+        int current_bn = bn[i];
+        Edges &current_edge = *edge_matrix[current_bn][u];
+        int current_index_id = idx_embedding[current_bn];
+
+        int current_candidates_count =
+                current_edge.offset_[current_index_id + 1] - current_edge.offset_[current_index_id];
+        int *current_candidates = current_edge.edge_ + current_edge.offset_[current_index_id];
+
+        SubgraphMatch_GraphOperations::ComputeCandidateSetIntersect(current_candidates, current_candidates_count, valid_candidate_index, valid_candidates_count, temp_buffer, temp_count);
+
+        std::swap(temp_buffer, valid_candidate_index);
+        valid_candidates_count = temp_count;
+    }
+
+    idx_count[u] = valid_candidates_count;
+}
+
+void SubgraphMatch_Query::GenerateDSPisoQueryPlan(const UNDirect_UNWeight_Graph& query_graph, Edges ***edge_matrix, int *&order, int *&pivot,TreeNode *tree,int *bfs_order, int *candidates_count, int **&weight_array) {
+    int query_vertices_num = query_graph.GetNodeNum();
+    order = new int[query_vertices_num];
+    pivot = new int[query_vertices_num];
+
+    for (int i = 0; i < query_vertices_num; ++i) {
+        order[i] = bfs_order[i];
+    }
+
+    for (int i = 1; i < query_vertices_num; ++i) {
+        pivot[i] = tree[order[i]].parent_;
+    }
+
+    // Compute weight array.
+    weight_array = new int*[query_vertices_num];
+    for (int i = 0; i < query_vertices_num; ++i) {
+        weight_array[i] = new int[candidates_count[i]];
+        std::fill(weight_array[i], weight_array[i] + candidates_count[i], std::numeric_limits<int>::max());
+    }
+
+    for (int i = query_vertices_num - 1; i >= 0; --i) {
+        int vertex = order[i];
+        TreeNode& node = tree[vertex];
+        bool set_to_one = true;
+
+        for (int j = 0; j < node.fn_count_; ++j) {
+            int child = node.fn_[j];
+            TreeNode& child_node = tree[child];
+
+            if (child_node.bn_count_ == 1) {
+                set_to_one = false;
+                Edges& cur_edge = *edge_matrix[vertex][child];
+                for (int k = 0; k < candidates_count[vertex]; ++k) {
+                    int cur_candidates_count = cur_edge.offset_[k + 1] - cur_edge.offset_[k];
+                    int* cur_candidates = cur_edge.edge_ + cur_edge.offset_[k];
+
+                    int weight = 0;
+
+                    for (int l = 0; l < cur_candidates_count; ++l) {
+                        int candidates = cur_candidates[l];
+                        weight += weight_array[child][candidates];
+                    }
+
+                    if (weight < weight_array[vertex][k])
+                        weight_array[vertex][k] = weight;
+                }
+            }
+        }
+
+        if (set_to_one) {
+            std::fill(weight_array[vertex], weight_array[vertex] + candidates_count[vertex], 1);
+        }
+    }
+}
+
+
+size_t SubgraphMatch_Query::ExploreDPisoStyle(const UNDirect_UNWeight_Graph& data_graph, const UNDirect_UNWeight_Graph& query_graph, TreeNode *tree,Edges ***edge_matrix, int **candidates, int *candidates_count,int **weight_array, int *order, size_t output_limit_num,size_t &call_count) {
+    int max_depth = query_graph.GetNodeNum();
+
+    int *extendable = new int[max_depth];
+    for (int i = 0; i < max_depth; ++i) {
+        extendable[i] = tree[i].bn_count_;
+    }
+
+    // Generate backward neighbors.
+    int **bn;
+    int *bn_count;
+    generateBN(query_graph, order, bn, bn_count);
+
+    // Allocate the memory buffer.
+    int *idx;
+    int *idx_count;
+    int *embedding;
+    int *idx_embedding;
+    int *temp_buffer;
+    int **valid_candidate_idx;
+    bool *visited_vertices;
+    allocateBuffer(data_graph, query_graph, candidates_count, idx, idx_count, embedding, idx_embedding,
+                   temp_buffer, valid_candidate_idx, visited_vertices);
+
+    // Evaluate the query.
+    size_t embedding_cnt = 0;
+    int cur_depth = 0;
+
+    int start_vertex = order[0];
+    std::vector<dpiso_min_pq> vec_rank_queue;
+
+    for (int i = 0; i < candidates_count[start_vertex]; ++i) {
+        int v = candidates[start_vertex][i];
+        embedding[start_vertex] = v;
+        idx_embedding[start_vertex] = i;
+        visited_vertices[v] = true;
+
+        vec_rank_queue.emplace_back(dpiso_min_pq(extendable_vertex_compare));
+        updateExtendableVertex(idx_embedding, idx_count, valid_candidate_idx, edge_matrix, temp_buffer, weight_array,
+                               tree, start_vertex, extendable,
+                               vec_rank_queue, query_graph);
+
+        int u = vec_rank_queue.back().top().first.first;
+        vec_rank_queue.back().pop();
+
+
+        call_count += 1;
+        cur_depth += 1;
+        order[cur_depth] = u;
+        idx[u] = 0;
+        while (cur_depth > 0) {
+            while (idx[u] < idx_count[u]) {
+                int valid_idx = valid_candidate_idx[u][idx[u]];
+                v = candidates[u][valid_idx];
+
+                if (visited_vertices[v]) {
+                    idx[u] += 1;
+                    continue;
+                }
+                embedding[u] = v;
+                idx_embedding[u] = valid_idx;
+                visited_vertices[v] = true;
+                idx[u] += 1;
+
+
+                if (cur_depth == max_depth - 1) {
+                    embedding_cnt += 1;
+                    visited_vertices[v] = false;
+                    if (embedding_cnt >= output_limit_num) {
+                        goto EXIT;
+                    }
+                } else {
+                    call_count += 1;
+                    cur_depth += 1;
+                    vec_rank_queue.emplace_back(vec_rank_queue.back());
+                    updateExtendableVertex(idx_embedding, idx_count, valid_candidate_idx, edge_matrix, temp_buffer,
+                                           weight_array, tree, u, extendable,
+                                           vec_rank_queue, query_graph);
+
+                    u = vec_rank_queue.back().top().first.first;
+                    vec_rank_queue.back().pop();
+                    idx[u] = 0;
+                    order[cur_depth] = u;
+
+                }
+            }
+
+            cur_depth -= 1;
+            vec_rank_queue.pop_back();
+            u = order[cur_depth];
+            visited_vertices[embedding[u]] = false;
+            restoreExtendableVertex(tree, u, extendable);
+        }
+    }
+
+    // Release the buffer.
+    EXIT:
+    releaseBuffer(max_depth, idx, idx_count, embedding, idx_embedding, temp_buffer, valid_candidate_idx,
+                  visited_vertices,
+                  bn, bn_count);
+
+    return embedding_cnt;
+}
+void SubgraphMatch_Query::updateExtendableVertex(int *idx_embedding, int *idx_count, int **valid_candidate_index, Edges ***edge_matrix, int *&temp_buffer, int **weight_array, TreeNode *tree, int mapped_vertex, int *extendable, std::vector<dpiso_min_pq> &vec_rank_queue, const UNDirect_UNWeight_Graph& query_graph) {
+    TreeNode &node = tree[mapped_vertex];
+    for (int i = 0; i < node.fn_count_; ++i) {
+        int u = node.fn_[i];
+        extendable[u] -= 1;
+        if (extendable[u] == 0) {
+            generateValidCandidateIndex(u, idx_embedding, idx_count, valid_candidate_index[u], edge_matrix, tree[u].bn_,
+                                        tree[u].bn_count_, temp_buffer);
+
+            int weight = 0;
+            for (int j = 0; j < idx_count[u]; ++j) {
+                int idx = valid_candidate_index[u][j];
+                weight += weight_array[u][idx];
+            }
+            vec_rank_queue.back().emplace(std::make_pair(std::make_pair(u, query_graph.GetNI(u).GetDeg()), weight));
+        }
+    }
+}
+
+void SubgraphMatch_Query::restoreExtendableVertex(TreeNode *tree, int unmapped_vertex,int *extendable) {
+    TreeNode &node = tree[unmapped_vertex];
+    for (int i = 0; i < node.fn_count_; ++i) {
+        int u = node.fn_[i];
+        extendable[u] += 1;
+    }
 }
 
 

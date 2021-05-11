@@ -12,7 +12,7 @@
 
 typedef unsigned int uint;
 
-const int NodeDatalengthDef=10;//默认节点标签最大长度是31个字节，最后一子节存'\0'
+const int NodeDatalengthDef=1;//默认节点标签最大长度是31个字节，最后一子节存'\0'
 const int EdgeDataLengthDef=32;//默认边标签最大长度
 const int InOutEidNumDef=10;//默认边数
 const size_t InOutEdgeNumDef=10;
@@ -39,13 +39,14 @@ private:
     char* begin_ptr;
     char* curAlloc_ptr;
     uint EveryNodeSize;
+    size_t MaxSize;
     
 };
 Arena::Arena(const uint NodeSize): EveryNodeSize(NodeSize){
     begin_ptr=static_cast<char*>(malloc(1024));
     curAlloc_ptr=begin_ptr;
 }
-Arena::Arena(const uint NodeSize,const size_t MaxSize):EveryNodeSize(NodeSize){
+Arena::Arena(const uint NodeSize,const size_t maxSize):EveryNodeSize(NodeSize),MaxSize(maxSize){
     begin_ptr=static_cast<char*>(malloc(MaxSize));
     curAlloc_ptr=begin_ptr;
 }
@@ -74,6 +75,7 @@ inline char* Arena::AllocateNode(){
     return old_ptr;
 }
 inline char* Arena::AllocateBytes(size_t bytes){
+    assert((curAlloc_ptr-begin_ptr+bytes)<MaxSize);
     char * old_ptr=curAlloc_ptr;
     curAlloc_ptr+=bytes;
     return old_ptr;

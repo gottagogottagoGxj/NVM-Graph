@@ -76,11 +76,17 @@ public:
         edge_count_ = 0;
         max_degree_ = 0;
     }
-
     ~Edges() {
-        delete[] offset_;
-        delete[] edge_;
     }
+    static void* operator new(size_t size,Arena* table){
+        char* ptr=table->AllocateBytes(sizeof(Edges));
+        return (void*)ptr;
+    }
+    static void operator delete(void* p,Arena* table){}
+    static void* operator new(size_t size, char* start){
+        return (void*)start;
+    }
+    static void operator delete(void* p,char* start){}
 };
 
 
@@ -151,7 +157,8 @@ public:
     static void GetKCore(const SubgraphMatch_Graph& graph, int *core_table);
     static void BfsTraversal(const SubgraphMatch_Graph& graph, int root_vertex, TreeNode *&tree, int *&bfs_order);
     static void DfsTraversal(TreeNode* tree, int root_vertex, int node_num, int* &dfs_order);
-    static void BuildTables(const UNDirect_UNWeight_Graph & data_graph, const UNDirect_UNWeight_Graph& query_graph, int **candidates, int *candidates_count,Edges ***edge_matrix);//建立候选集的邻接表
+    static void BuildTables(const UNDirect_UNWeight_Graph & data_graph, const UNDirect_UNWeight_Graph& query_graph, int **candidates, int *candidates_count,Edges ***edge_matrix,Arena* table);//建立候选集的邻接表
+    static void ComputeCandidateSetIntersect(const int* larray,const int l_count, const int* rarray,const int r_count,int* cn, int& cn_count);
 private:
     static void dfs(TreeNode* tree, int cur_vertex, int* dfs_order, int& count);
 };
@@ -298,7 +305,7 @@ void SubgraphMatch_GraphOperations::dfs(TreeNode *tree, int cur_vertex, int *dfs
 }
 
 
-void SubgraphMatch_GraphOperations::BuildTables(const UNDirect_UNWeight_Graph & data_graph, const UNDirect_UNWeight_Graph& query_graph, int **candidates, int *candidates_count,Edges ***edge_matrix) {
+void SubgraphMatch_GraphOperations::BuildTables(const UNDirect_UNWeight_Graph & data_graph, const UNDirect_UNWeight_Graph& query_graph, int **candidates, int *candidates_count,Edges ***edge_matrix, Arena* table) {
     int query_vertices_num = query_graph.GetNodeNum();
     int* flag = new int[data_graph.GetNodeNum()];
     int* updated_flag = new int[data_graph.GetNodeNum()];
@@ -344,13 +351,13 @@ void SubgraphMatch_GraphOperations::BuildTables(const UNDirect_UNWeight_Graph & 
                     continue;
 
                 
-                edge_matrix[u_nbr][u] = new Edges;
+                edge_matrix[u_nbr][u] = new(table) Edges;
                 edge_matrix[u_nbr][u]->vertex_count_ = candidates_count[u_nbr];
-                edge_matrix[u_nbr][u]->offset_ = new int[candidates_count[u_nbr] + 1];
+                edge_matrix[u_nbr][u]->offset_ = (int*)table->AllocateBytes((candidates_count[u_nbr] + 1)*sizeof(int));
 
-                edge_matrix[u][u_nbr] = new Edges;
+                edge_matrix[u][u_nbr] = new(table) Edges;
                 edge_matrix[u][u_nbr]->vertex_count_ = candidates_count[u];
-                edge_matrix[u][u_nbr]->offset_ = new int[candidates_count[u] + 1];
+                edge_matrix[u][u_nbr]->offset_ = (int*) table->AllocateBytes((candidates_count[u] + 1)*sizeof(int));
                 std::fill(edge_matrix[u][u_nbr]->offset_, edge_matrix[u][u_nbr]->offset_ + candidates_count[u] + 1, 0);
 
                 int local_edge_count = 0;
@@ -390,11 +397,11 @@ void SubgraphMatch_GraphOperations::BuildTables(const UNDirect_UNWeight_Graph & 
                 edge_matrix[u_nbr][u]->offset_[candidates_count[u_nbr]] = local_edge_count;
                 edge_matrix[u_nbr][u]->max_degree_ = local_max_degree;
                 edge_matrix[u_nbr][u]->edge_count_ = local_edge_count;
-                edge_matrix[u_nbr][u]->edge_ = new int[local_edge_count];
+                edge_matrix[u_nbr][u]->edge_ = (int*)table->AllocateBytes(local_edge_count*sizeof(int));
                 std::copy(temp_edges.begin(), temp_edges.begin() + local_edge_count, edge_matrix[u_nbr][u]->edge_);
 
                 edge_matrix[u][u_nbr]->edge_count_ = local_edge_count;
-                edge_matrix[u][u_nbr]->edge_ = new int[local_edge_count];
+                edge_matrix[u][u_nbr]->edge_ = (int*)table->AllocateBytes(local_edge_count*sizeof(int));
 
                 local_max_degree = 0;
                 for (int j = 1; j <= candidates_count[u]; ++j) {
@@ -525,7 +532,17 @@ void SubgraphMatch_Graph::BuildCoreTable(){
     }
 }
 
-
+void SubgraphMatch_GraphOperations::ComputeCandidateSetIntersect(const int* larray,const int l_count, const int* rarray,const int r_count,int* cn, int& cn_count){
+    cn_count=0;
+    std::unordered_map<int, int> temp;
+    for(int i=0;i<l_count;++i) temp[larray[i]]++;
+    for(int i=0;i<r_count;++i){
+        if(temp[rarray[i]]!=0){
+            cn[cn_count++]=rarray[i];
+            temp[rarray[i]]--;
+        }
+    }
+}
 
 
 #endif /* SubgraphMatch_Graph_h */

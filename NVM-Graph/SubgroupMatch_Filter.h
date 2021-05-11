@@ -17,13 +17,20 @@ class SubgraphMatch_Filter{
 public:
     static void ComputeCandidateWithLDF(const SubgraphMatch_Graph& data_graph,const SubgraphMatch_Graph& query_graph, const int& query_vertex,int& count,int* buffer=NULL);
     static void ComputeCandidateWithNLF(const SubgraphMatch_Graph& data_graph,const SubgraphMatch_Graph& query_graph, const int& query_vertex,int& count,int* buffer=NULL);
+    static bool LDFFilter(const SubgraphMatch_Graph& data_graph, const SubgraphMatch_Graph& query_graph,Arena* candidatetable, int **&candidates, int *&candidates_count);
+    static bool NLFFilter(const SubgraphMatch_Graph& data_graph, const SubgraphMatch_Graph& query_graph, Arena* candidatetable, int **&candidates, int *&candidates_count);
     
     static void GenerateCFLFilterPlan(const SubgraphMatch_Graph& data_graph, const SubgraphMatch_Graph& query_graph, TreeNode *&tree,int *&order, int &level_count, int *&level_offset);
     
     static bool CFLFilter(const SubgraphMatch_Graph& data_graph, const SubgraphMatch_Graph &query_graph, Arena* candidatetable, int **&candidates, int *&candidates_count,int *&order, TreeNode *&tree);
+    
+    static void GenerateDPisoFilterPlan(const SubgraphMatch_Graph& data_graph, const SubgraphMatch_Graph& query_graph, TreeNode *&tree,int *&order);
+    static bool DPisoFilter(const SubgraphMatch_Graph& data_graph, const SubgraphMatch_Graph& query_graph, Arena* candidatetable,int **&candidates, int *&candidates_count,int *&order, TreeNode *&tree);
+    
 private:
     static void AllocateBuffer(const SubgraphMatch_Graph& data_graph,const SubgraphMatch_Graph& query_graph,Arena* table ,int** &candidate ,int* &candidate_count);
     static int SelectCFLFilterStartVertex(const SubgraphMatch_Graph &data_graph, const SubgraphMatch_Graph& query_graph);
+    static int SelectDPisoStartVertex(const SubgraphMatch_Graph& data_graph, const SubgraphMatch_Graph& query_graph);
     static void GenerateCandidates(const SubgraphMatch_Graph& data_graph, const SubgraphMatch_Graph& query_graph, int query_vertex,int *pivot_vertices, int pivot_vertices_count, int **candidates,int *candidates_count, int *flag, int *updated_flag);
     static void PruneCandidates(const SubgraphMatch_Graph & data_graph, const SubgraphMatch_Graph & query_graph, int query_vertex,int *pivot_vertices, int pivot_vertices_count, int **candidates,int *candidates_count, int *flag, int *updated_flag);
     static void CompactCandidates(int **&candidates, int *&candidates_count, int query_vertex_num);
@@ -93,6 +100,35 @@ void SubgraphMatch_Filter:: ComputeCandidateWithNLF(const SubgraphMatch_Graph& d
         }
         }
 }
+
+bool SubgraphMatch_Filter::LDFFilter(const SubgraphMatch_Graph& data_graph, const SubgraphMatch_Graph& query_graph,Arena* candidatetable, int **&candidates, int *&candidates_count) {
+    AllocateBuffer(data_graph, query_graph,candidatetable, candidates, candidates_count);
+
+    for (int i = 0; i < query_graph.GetGraph()->GetNodeNum(); ++i) {
+        ComputeCandidateWithLDF(data_graph, query_graph, i, candidates_count[i],candidates[i]);
+
+        if (candidates_count[i] == 0) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+bool SubgraphMatch_Filter::NLFFilter(const SubgraphMatch_Graph& data_graph, const SubgraphMatch_Graph& query_graph, Arena* candidatetable, int **&candidates, int *&candidates_count) {
+    AllocateBuffer(data_graph, query_graph, candidatetable,candidates, candidates_count);
+
+    for (int i = 0; i < query_graph.GetGraph()->GetNodeNum(); ++i) {
+        ComputeCandidateWithNLF(data_graph, query_graph, i, candidates_count[i],candidates[i]);
+
+        if (candidates_count[i] == 0) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
 
 void SubgraphMatch_Filter::AllocateBuffer(const SubgraphMatch_Graph& data_graph,const SubgraphMatch_Graph& query_graph,Arena* table ,int** &candidate ,int* &candidate_count){
     int query_vertex_num=query_graph.GetGraph()->GetNodeNum();
@@ -462,5 +498,101 @@ bool SubgraphMatch_Filter::IsCandidateSetValid(int **&candidates, int *&candidat
     }
     return true;
 }
+
+
+void SubgraphMatch_Filter::GenerateDPisoFilterPlan(const SubgraphMatch_Graph& data_graph, const SubgraphMatch_Graph& query_graph, TreeNode *&tree,int *&order) {
+    int start_vertex = SelectDPisoStartVertex(data_graph, query_graph);
+    SubgraphMatch_GraphOperations::BfsTraversal(query_graph, start_vertex, tree, order);
+
+    int query_vertices_num = query_graph.GetGraph()->GetNodeNum();
+    std::vector<int> order_index(query_vertices_num);
+    for (int i = 0; i < query_vertices_num; ++i) {
+        int query_vertex = order[i];
+        order_index[query_vertex] = i;
+    }
+
+    for (int i = 0; i < query_vertices_num; ++i) {
+        int u = order[i];
+        tree[u].under_level_count_ = 0;
+        tree[u].bn_count_ = 0;
+        tree[u].fn_count_ = 0;
+
+        auto u_iter=query_graph.GetGraph()->GetNI(u);
+        auto temp_iter=u_iter;
+        
+        do{
+            temp_iter=u_iter;
+            int u_nbrs_count;
+            const int* u_nbrs = u_iter.GetCurNbr(u_nbrs_count);
+            for (int j = 0; j < u_nbrs_count; ++j) {
+                int u_nbr = u_nbrs[j];
+                if (order_index[u_nbr] < order_index[u]) {
+                    tree[u].bn_[tree[u].bn_count_++] = u_nbr;
+                }
+                else {
+                    tree[u].fn_[tree[u].fn_count_++] = u_nbr;
+                }
+        }
+            u_iter.ToNextNode();
+        }while(!temp_iter.IsNodeEnd());
+    }
+}
+
+int SubgraphMatch_Filter::SelectDPisoStartVertex(const SubgraphMatch_Graph& data_graph, const SubgraphMatch_Graph& query_graph) {
+    double min_score = data_graph.GetGraph()->GetNodeNum();
+    int start_vertex = 0;
+
+    for (int i = 0; i < query_graph.GetGraph()->GetNodeNum(); ++i) {
+        int degree = query_graph.GetGraph()->GetNI(i).GetDeg();
+        if (degree <= 1)
+            continue;
+
+        int count = 0;
+        ComputeCandidateWithLDF(data_graph, query_graph, i, count);
+        double cur_score = count / (double)degree;
+        if (cur_score < min_score) {
+            min_score = cur_score;
+            start_vertex = i;
+        }
+    }
+
+    return start_vertex;
+}
+
+bool SubgraphMatch_Filter::DPisoFilter(const SubgraphMatch_Graph& data_graph, const SubgraphMatch_Graph& query_graph, Arena* candidatetable,int **&candidates, int *&candidates_count,int *&order, TreeNode *&tree) {
+    if (!LDFFilter(data_graph, query_graph, candidatetable, candidates, candidates_count))
+        return false;
+
+    GenerateDPisoFilterPlan(data_graph, query_graph, tree, order);
+
+    int query_vertices_num = query_graph.GetGraph()->GetNodeNum();
+    int* updated_flag = new int[data_graph.GetGraph()->GetNodeNum()];
+    int* flag = new int[data_graph.GetGraph()->GetNodeNum()];
+    std::fill(flag, flag + data_graph.GetGraph()->GetNodeNum(), 0);
+
+    // The number of refinement is k. According to the original paper, we set k as 3.
+    for (int k = 0; k < 3; ++k) {
+        if (k % 2 == 0) {
+            for (int i = 1; i < query_vertices_num; ++i) {
+                int query_vertex = order[i];
+                TreeNode& node = tree[query_vertex];
+                PruneCandidates(data_graph, query_graph, query_vertex, node.bn_, node.bn_count_, candidates, candidates_count, flag, updated_flag);
+            }
+        }
+        else {
+            for (int i = query_vertices_num - 2; i >= 0; --i) {
+                int query_vertex = order[i];
+                TreeNode& node = tree[query_vertex];
+                PruneCandidates(data_graph, query_graph, query_vertex, node.fn_, node.fn_count_, candidates, candidates_count, flag, updated_flag);
+            }
+        }
+    }
+    CompactCandidates(candidates, candidates_count, query_graph.GetGraph()->GetNodeNum());
+
+    delete[] updated_flag;
+    delete[] flag;
+    return IsCandidateSetValid(candidates, candidates_count, query_graph.GetGraph()->GetNodeNum());
+}
+
 
 #endif /* SubgroupMatch_Filter_h */
