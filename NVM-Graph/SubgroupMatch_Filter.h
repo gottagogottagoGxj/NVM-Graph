@@ -571,7 +571,7 @@ bool SubgraphMatch_Filter::DPisoFilter(const SubgraphMatch_Graph& data_graph, co
     std::fill(flag, flag + data_graph.GetGraph()->GetNodeNum(), 0);
 
     // The number of refinement is k. According to the original paper, we set k as 3.
-    for (int k = 0; k < 3; ++k) {
+    for (int k = 0; k < 2; ++k) {
         if (k % 2 == 0) {
             for (int i = 1; i < query_vertices_num; ++i) {
                 int query_vertex = order[i];

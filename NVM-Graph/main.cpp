@@ -15,6 +15,7 @@
 #include<fstream>
 #include<time.h>
 #include<sstream>
+#include<chrono>
 #include"UNDirect_UNWeight_Graph.h"
 #include"SubgroupMatch_Filter.h"
 #include"SubgraphMatch_Query.h"
@@ -25,6 +26,12 @@ void split(const string& s, vector<string>& sv, const char flag = ' ');
 
 void LoadSubgraphMatchHPRDData(UNDirect_UNWeight_Graph& graph,const char* Path);
 void LoadSubgraphMatchYeastData(UNDirect_UNWeight_Graph& graph,const char* Path);
+void CFLDPSubgraphMatch(const SubgraphMatch_Graph& data_graph,SubgraphMatch_Graph& query_graph,double* result);
+
+void CFLSubgraphMatch(const SubgraphMatch_Graph& data_graph,SubgraphMatch_Graph& query_graph,double* result);
+void DPisoSubgraphMatch(const SubgraphMatch_Graph& data_graph,SubgraphMatch_Graph& query_graph,double* result);
+void CRDPSubgraphMatch(const SubgraphMatch_Graph& data_graph,SubgraphMatch_Graph& query_graph,double* result);
+
 
 int main(){
     
@@ -40,83 +47,112 @@ int main(){
 
 void UNDirect_UNWeight_Test(){
     Arena dataarena(UNDirect_UNWeight_Graph::GetNodeSize(),1024*1024*16);
-    Arena queryarena(UNDirect_UNWeight_Graph::GetNodeSize(),1024*1024);
-    UNDirect_UNWeight_Graph DataGraph(&dataarena),QueryGraph(&queryarena);
-    const char* querygraphpath="/Users/jiangqingyuejinren/Desktop/参考代码/子图匹配/SubgraphMatching-master/test/query_graph/query_dense_16_2.graph";
+    UNDirect_UNWeight_Graph DataGraph(&dataarena);
     const char* datagraphpath="/Users/jiangqingyuejinren/Desktop/NVM-Graph/NVM-Graph/HPRD.graph";
     LoadSubgraphMatchHPRDData(DataGraph,datagraphpath);
-    LoadSubgraphMatchHPRDData(QueryGraph,querygraphpath);
-  
-    Arena matchtable(0,1024*1024*1024);
+    Arena datamatchtable(1,1024*1024*32);//存数据图的LDF NLF
+    SubgraphMatch_Graph DataMatchGraph(&DataGraph, &datamatchtable, &datamatchtable);
     
-    SubgraphMatch_Graph DataMatchGraph(&DataGraph, &matchtable, &matchtable);
-    
-    SubgraphMatch_Graph QueryMatchGraph(&QueryGraph,&matchtable,&matchtable);
-    
-    QueryMatchGraph.BuildCoreTable();
-    
-    /*int ** candidate;
-    int* candidate_count;
-    int* order;
-    TreeNode* tree;
-    SubgraphMatch_Filter::CFLFilter(DataMatchGraph, QueryMatchGraph, &matchtable, candidate, candidate_count, order, tree);
-    Edges ***edge_matrix=NULL;
-    edge_matrix=new Edges**[QueryGraph.GetNodeNum()];
-    for(int i=0;i<QueryGraph.GetNodeNum();++i) edge_matrix[i]=new Edges*[QueryGraph.GetNodeNum()];
-    for(int i=0;i<QueryGraph.GetNodeNum();++i){
-        for(int j=0;j<QueryGraph.GetNodeNum();++j){
-            edge_matrix[i][j]=NULL;
-        }
+    std::string path_prefix="/Users/jiangqingyuejinren/Desktop/参考代码/子图匹配/SubgraphMatching-master/test/query_graph/query_dense_16_";
+    ofstream Result("/Users/jiangqingyuejinren/Desktop/NVM-Graph/NVM-Graph/Result.txt",ios::app);
+    if(Result.fail()){cout<<"Result.txt cannot open"<<endl;}
+    const int querygraphnum=40;
+    double CFLResult[querygraphnum][9];
+    double DPisoResult[querygraphnum][9];
+    double CFLDPResult[querygraphnum][9];
+    for(int i=1;i<querygraphnum;i++){
+        std::ostringstream path_postfix;
+        path_postfix<<i;
+        std::string querygraphpath=path_prefix+path_postfix.str()+".graph";
+        Arena queryarena(UNDirect_UNWeight_Graph::GetNodeSize(),1024*128);
+        UNDirect_UNWeight_Graph QueryGraph(&queryarena);
+        LoadSubgraphMatchHPRDData(QueryGraph, querygraphpath.c_str());
+        Arena querymatchtable(1,1024*1024);
+        SubgraphMatch_Graph QueryMatchGraph(&QueryGraph,&querymatchtable,&querymatchtable);
+        auto start=std::chrono::high_resolution_clock::now();
+        CFLSubgraphMatch(DataMatchGraph, QueryMatchGraph, CFLResult[i]);
+        auto end=std::chrono::high_resolution_clock::now();
+        CFLResult[i][8]=std::chrono::duration_cast<std::chrono::nanoseconds>(end-start).count();
+        start=std::chrono::high_resolution_clock::now();
+        DPisoSubgraphMatch(DataMatchGraph, QueryMatchGraph, DPisoResult[i]);
+        end=std::chrono::high_resolution_clock::now();
+        DPisoResult[i][8]=std::chrono::duration_cast<std::chrono::nanoseconds>(end-start).count();
+        start=std::chrono::high_resolution_clock::now();
+        CRDPSubgraphMatch(DataMatchGraph, QueryMatchGraph, CFLDPResult[i]);
+        end=std::chrono::high_resolution_clock::now();
+        CFLDPResult[i][8]=std::chrono::duration_cast<std::chrono::nanoseconds>(end-start).count();
+        
     }
-    Arena gxj(1,1024*1024*32);
-    SubgraphMatch_GraphOperations::BuildTables(*DataMatchGraph.GetGraph(), *QueryMatchGraph.GetGraph(),candidate, candidate_count, edge_matrix,&gxj);
     
-    int* query_order;
-    int* query_pivot;
-    
-    SubgraphMatch_Query::GenerateCFLQueryPlan(DataMatchGraph, QueryMatchGraph, edge_matrix, query_order, query_pivot, tree, order, candidate_count);
-    
-    size_t embedding_count;
-    size_t call_count=0;
-    embedding_count=SubgraphMatch_Query::ExecuteQuery(DataGraph, QueryGraph, edge_matrix, candidate, candidate_count, query_order, query_pivot, 1000, call_count);
-    cout<<call_count<<endl;
-    cout<<embedding_count<<endl;
-    
-    delete[] candidate;
-    delete[] candidate_count;
-    delete[] order;
-    delete[] tree;
-    delete[] query_order;
-    delete[] query_pivot;
-    
-    if(edge_matrix!=NULL){
-        for(int i=0;i<QueryGraph.GetNodeNum();++i){
-            delete[] edge_matrix[i];
+    for(int i=1;i<querygraphnum;++i){
+        Result<<"CFL :";
+        for(int j=0;j<9;++j){
+            Result<<CFLResult[i][j]<<" ";
         }
-        delete [] edge_matrix;
-    }*/
+        Result<<endl;
+        Result<<"DP  :";
+        for(int j=0;j<9;++j){
+            Result<<DPisoResult[i][j]<<" ";
+        }
+        Result<<endl;
+        Result<<"CRDP:";
+        for(int j=0;j<9;++j){
+            Result<<CFLDPResult[i][j]<<" ";
+        }
+        Result<<endl;
+    }
+    
+   
+    
+}
+
+void CFLSubgraphMatch(const SubgraphMatch_Graph& data_graph,SubgraphMatch_Graph& query_graph,double* result){
+    query_graph.BuildCoreTable();
+    Arena matchtable(1,1024*1024*512);// 存匹配过程中的candidate Edges
     int ** candidate;
     int* candidate_count;
     int* order;
     TreeNode* tree;
-    SubgraphMatch_Filter::DPisoFilter(DataMatchGraph, QueryMatchGraph, &matchtable, candidate, candidate_count, order, tree);
-    Edges ***edge_matrix=NULL;
-    edge_matrix=new Edges**[QueryGraph.GetNodeNum()];
-    for(int i=0;i<QueryGraph.GetNodeNum();++i) edge_matrix[i]=new Edges*[QueryGraph.GetNodeNum()];
     
-    Arena gxj(1,1024*1024*32);
-    SubgraphMatch_GraphOperations::BuildTables(*DataMatchGraph.GetGraph(), *QueryMatchGraph.GetGraph(),candidate, candidate_count, edge_matrix,&gxj);
+    auto start=std::chrono::high_resolution_clock::now();
+    SubgraphMatch_Filter::CFLFilter(data_graph, query_graph, &matchtable, candidate, candidate_count, order, tree);
+    auto end=std::chrono::high_resolution_clock::now();
+    double filter_time_ns=std::chrono::duration_cast<std::chrono::nanoseconds>(end-start).count();
+    result[0]=filter_time_ns;
+    int candidate_sum=0;
+    for(int i=0;i<query_graph.GetGraph()->GetNodeNum();++i) candidate_sum+=candidate_count[i];
+    result[6]=candidate_sum;
+    
+    Edges ***edge_matrix=NULL;
+    edge_matrix=new Edges**[query_graph.GetGraph()->GetNodeNum()];
+    for(int i=0;i<query_graph.GetGraph()->GetNodeNum();++i) edge_matrix[i]=new Edges*[query_graph.GetGraph()->GetNodeNum()];
+    
+    start=std::chrono::high_resolution_clock::now();
+    SubgraphMatch_GraphOperations::BuildTables(*data_graph.GetGraph(), *query_graph.GetGraph(),candidate, candidate_count, edge_matrix,&matchtable);
+    end=std::chrono::high_resolution_clock::now();
+    double bulidtable_time_ns=std::chrono::duration_cast<std::chrono::nanoseconds>(end-start).count();
+    result[1]=bulidtable_time_ns;
+    
     
     int* query_order;
     int* query_pivot;
+    start=std::chrono::high_resolution_clock::now();
+    SubgraphMatch_Query::GenerateCFLQueryPlan(data_graph, query_graph, edge_matrix, query_order, query_pivot, tree, order, candidate_count);
+    end=std::chrono::high_resolution_clock::now();
+    double queryplan_time_ns=std::chrono::duration_cast<std::chrono::nanoseconds>(end-start).count();
     
-    SubgraphMatch_Query::GenerateCFLQueryPlan(DataMatchGraph, QueryMatchGraph, edge_matrix, query_order, query_pivot, tree, order, candidate_count);
+    result[2]=queryplan_time_ns;
     
     size_t embedding_count;
     size_t call_count=0;
-    embedding_count=SubgraphMatch_Query::ExecuteQuery(DataGraph, QueryGraph, edge_matrix, candidate, candidate_count, query_order, query_pivot, 1000, call_count);
-    cout<<call_count<<endl;
-    cout<<embedding_count<<endl;
+    start=std::chrono::high_resolution_clock::now();
+    embedding_count=SubgraphMatch_Query::ExploreGraph(*data_graph.GetGraph(), *query_graph.GetGraph(), edge_matrix, candidate, candidate_count, query_order, query_pivot, 1000, call_count);
+    end=std::chrono::high_resolution_clock::now();
+    double query_time_ns=std::chrono::duration_cast<std::chrono::nanoseconds>(end-start).count();
+    result[3]=query_time_ns;
+    result[4]=call_count;
+    result[5]=embedding_count;
+    result[7]=queryplan_time_ns+query_time_ns;
     
     delete[] candidate;
     delete[] candidate_count;
@@ -126,16 +162,207 @@ void UNDirect_UNWeight_Test(){
     delete[] query_pivot;
     
     if(edge_matrix!=NULL){
-        for(int i=0;i<QueryGraph.GetNodeNum();++i){
+        for(int i=0;i<query_graph.GetGraph()->GetNodeNum();++i){
+            delete[] edge_matrix[i];
+        }
+        delete [] edge_matrix;
+    }
+}
+void DPisoSubgraphMatch(const SubgraphMatch_Graph& data_graph,SubgraphMatch_Graph& query_graph,double* result){
+    Arena matchtable(1,1024*1024*512);// 存匹配过程中的candidate Edges
+    int ** candidate;
+    int* candidate_count;
+    int* order;
+    TreeNode* tree;
+    
+    auto start=std::chrono::high_resolution_clock::now();
+    SubgraphMatch_Filter::DPisoFilter(data_graph, query_graph, &matchtable, candidate, candidate_count, order, tree);
+    auto end=std::chrono::high_resolution_clock::now();
+    double filter_time_ns=std::chrono::duration_cast<std::chrono::nanoseconds>(end-start).count();
+    result[0]=filter_time_ns;
+    int candidate_sum=0;
+    for(int i=0;i<query_graph.GetGraph()->GetNodeNum();++i) candidate_sum+=candidate_count[i];
+    result[6]=candidate_sum;
+    
+    Edges ***edge_matrix=NULL;
+    edge_matrix=new Edges**[query_graph.GetGraph()->GetNodeNum()];
+    for(int i=0;i<query_graph.GetGraph()->GetNodeNum();++i) edge_matrix[i]=new Edges*[query_graph.GetGraph()->GetNodeNum()];
+    
+    start=std::chrono::high_resolution_clock::now();
+    SubgraphMatch_GraphOperations::BuildTables(*data_graph.GetGraph(), *query_graph.GetGraph(),candidate, candidate_count, edge_matrix,&matchtable);
+    end=std::chrono::high_resolution_clock::now();
+    double bulidtable_time_ns=std::chrono::duration_cast<std::chrono::nanoseconds>(end-start).count();
+    result[1]=bulidtable_time_ns;
+    
+    
+    int* query_order;
+    int* query_pivot;
+    int** weight;
+    start=std::chrono::high_resolution_clock::now();
+    SubgraphMatch_Query::GenerateDSPisoQueryPlan(*query_graph.GetGraph(), edge_matrix, query_order, query_pivot, tree, order, candidate_count, weight);
+    end=std::chrono::high_resolution_clock::now();
+    double queryplan_time_ns=std::chrono::duration_cast<std::chrono::nanoseconds>(end-start).count();
+    
+    result[2]=queryplan_time_ns;
+    
+    size_t embedding_count;
+    size_t call_count=0;
+    start=std::chrono::high_resolution_clock::now();
+    embedding_count=SubgraphMatch_Query::ExploreDPisoStyle(*data_graph.GetGraph(), *query_graph.GetGraph(), tree, edge_matrix, candidate, candidate_count, weight, query_order, 1000, call_count);
+    end=std::chrono::high_resolution_clock::now();
+    double query_time_ns=std::chrono::duration_cast<std::chrono::nanoseconds>(end-start).count();
+    result[3]=query_time_ns;
+    result[4]=call_count;
+    result[5]=embedding_count;
+    result[7]=queryplan_time_ns+query_time_ns;
+    
+    delete[] candidate;
+    delete[] candidate_count;
+    delete[] order;
+    delete[] tree;
+    delete[] query_order;
+    delete[] query_pivot;
+    
+    if(edge_matrix!=NULL){
+        for(int i=0;i<query_graph.GetGraph()->GetNodeNum();++i){
             delete[] edge_matrix[i];
         }
         delete [] edge_matrix;
     }
     
-    
-    
-    
+    for(int i=0;i<query_graph.GetGraph()->GetNodeNum();++i){
+        delete[] weight[i];
+    }
+    delete[] weight;
 }
+
+void CFLDPSubgraphMatch(const SubgraphMatch_Graph& data_graph,SubgraphMatch_Graph& query_graph,double* result){
+    Arena matchtable(1,1024*1024*512);// 存匹配过程中的candidate Edges
+    int ** candidate;
+    int* candidate_count;
+    int* order;
+    TreeNode* tree;
+    
+    auto start=std::chrono::high_resolution_clock::now();
+    SubgraphMatch_Filter::CFLFilter(data_graph, query_graph, &matchtable, candidate, candidate_count, order, tree);
+    auto end=std::chrono::high_resolution_clock::now();
+    double filter_time_ns=std::chrono::duration_cast<std::chrono::nanoseconds>(end-start).count();
+    result[0]=filter_time_ns;
+    int candidate_sum=0;
+    for(int i=0;i<query_graph.GetGraph()->GetNodeNum();++i) candidate_sum+=candidate_count[i];
+    result[6]=candidate_sum;
+    
+    Edges ***edge_matrix=NULL;
+    edge_matrix=new Edges**[query_graph.GetGraph()->GetNodeNum()];
+    for(int i=0;i<query_graph.GetGraph()->GetNodeNum();++i) edge_matrix[i]=new Edges*[query_graph.GetGraph()->GetNodeNum()];
+    
+    start=std::chrono::high_resolution_clock::now();
+    SubgraphMatch_GraphOperations::BuildTables(*data_graph.GetGraph(), *query_graph.GetGraph(),candidate, candidate_count, edge_matrix,&matchtable);
+    end=std::chrono::high_resolution_clock::now();
+    double bulidtable_time_ns=std::chrono::duration_cast<std::chrono::nanoseconds>(end-start).count();
+    result[1]=bulidtable_time_ns;
+    
+    
+    int* query_order;
+    int* query_pivot;
+    int** weight;
+    start=std::chrono::high_resolution_clock::now();
+    SubgraphMatch_Query::GenerateCFLDPQueryPlan(*query_graph.GetGraph(), edge_matrix, query_order, query_pivot, tree, order, candidate_count, weight);
+    end=std::chrono::high_resolution_clock::now();
+    double queryplan_time_ns=std::chrono::duration_cast<std::chrono::nanoseconds>(end-start).count();
+    
+    result[2]=queryplan_time_ns;
+    
+    size_t embedding_count;
+    size_t call_count=0;
+    start=std::chrono::high_resolution_clock::now();
+    embedding_count=SubgraphMatch_Query::ExploreDPisoStyle(*data_graph.GetGraph(), *query_graph.GetGraph(), tree, edge_matrix, candidate, candidate_count, weight, query_order, 1000, call_count);
+    end=std::chrono::high_resolution_clock::now();
+    double query_time_ns=std::chrono::duration_cast<std::chrono::nanoseconds>(end-start).count();
+    result[3]=query_time_ns;
+    result[4]=call_count;
+    result[5]=embedding_count;
+    result[7]=queryplan_time_ns+query_time_ns;
+    
+    delete[] candidate;
+    delete[] candidate_count;
+    delete[] order;
+    delete[] tree;
+    delete[] query_order;
+    delete[] query_pivot;
+    
+    if(edge_matrix!=NULL){
+        for(int i=0;i<query_graph.GetGraph()->GetNodeNum();++i){
+            delete[] edge_matrix[i];
+        }
+        delete [] edge_matrix;
+    }
+    
+    for(int i=0;i<query_graph.GetGraph()->GetNodeNum();++i){
+        delete[] weight[i];
+    }
+    delete[] weight;
+}
+
+void CRDPSubgraphMatch(const SubgraphMatch_Graph& data_graph,SubgraphMatch_Graph& query_graph,double* result){
+    Arena matchtable(1,1024*1024*512);// 存匹配过程中的candidate Edges
+    int ** candidate;
+    int* candidate_count;
+    int* order;
+    TreeNode* tree;
+    
+    auto start=std::chrono::high_resolution_clock::now();
+    SubgraphMatch_Filter::CFLFilter(data_graph, query_graph, &matchtable, candidate, candidate_count, order, tree);
+    auto end=std::chrono::high_resolution_clock::now();
+    double filter_time_ns=std::chrono::duration_cast<std::chrono::nanoseconds>(end-start).count();
+    result[0]=filter_time_ns;
+    int candidate_sum=0;
+    for(int i=0;i<query_graph.GetGraph()->GetNodeNum();++i) candidate_sum+=candidate_count[i];
+    result[6]=candidate_sum;
+    
+    /*Edges ***edge_matrix=NULL;
+    edge_matrix=new Edges**[query_graph.GetGraph()->GetNodeNum()];
+    for(int i=0;i<query_graph.GetGraph()->GetNodeNum();++i) edge_matrix[i]=new Edges*[query_graph.GetGraph()->GetNodeNum()];
+    
+    start=std::chrono::high_resolution_clock::now();
+    SubgraphMatch_GraphOperations::BuildTables(*data_graph.GetGraph(), *query_graph.GetGraph(),candidate, candidate_count, edge_matrix,&matchtable);
+    end=std::chrono::high_resolution_clock::now();
+    double bulidtable_time_ns=std::chrono::duration_cast<std::chrono::nanoseconds>(end-start).count();
+    result[1]=bulidtable_time_ns;*/
+    result[1]=0;
+    
+    
+    int* query_order;
+    start=std::chrono::high_resolution_clock::now();
+    SubgraphMatch_Query::GenerateCRDPQueryPlan(*query_graph.GetGraph(), query_order, tree, order);
+    end=std::chrono::high_resolution_clock::now();
+    double queryplan_time_ns=std::chrono::duration_cast<std::chrono::nanoseconds>(end-start).count();
+    
+    result[2]=queryplan_time_ns;
+    
+    size_t embedding_count;
+    size_t call_count=0;
+    start=std::chrono::high_resolution_clock::now();
+    embedding_count=SubgraphMatch_Query::ExploreCRDPStyle(*data_graph.GetGraph(), *query_graph.GetGraph(), tree, candidate, candidate_count, query_order, 1000, call_count);
+    end=std::chrono::high_resolution_clock::now();
+    double query_time_ns=std::chrono::duration_cast<std::chrono::nanoseconds>(end-start).count();
+    result[3]=query_time_ns;
+    result[4]=call_count;
+    result[5]=embedding_count;
+    result[7]=queryplan_time_ns+query_time_ns;
+    
+    delete[] candidate;
+    delete[] candidate_count;
+    delete[] order;
+    delete[] tree;
+    delete[] query_order;
+    
+   
+}
+
+    
+    
+    
 
 void LoadSubgraphMatchHPRDData(UNDirect_UNWeight_Graph& graph,const char* Path){
     ifstream datafile(Path);
