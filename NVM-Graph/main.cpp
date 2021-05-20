@@ -19,6 +19,7 @@
 #include"UNDirect_UNWeight_Graph.h"
 #include"SubgroupMatch_Filter.h"
 #include"SubgraphMatch_Query.h"
+#include"CHL_UNWeight.h"
 using namespace std;
 
 void UNDirect_UNWeight_Test();
@@ -35,10 +36,27 @@ void CRDPSubgraphMatch(const SubgraphMatch_Graph& data_graph,SubgraphMatch_Graph
 
 int main(){
     
-    //Property_Graph_Test();
-    //Label_Test();
-    //UNDirect_UNWeight_Test();
-    UNDirect_UNWeight_Test();
+    Arena dataarena(UNDirect_UNWeight_Graph::GetNodeSize(),1024*1024);
+    UNDirect_UNWeight_Graph Graph(&dataarena);
+  
+    Arena Label(0,1024*1024*16);
+    
+    Graph.AddEdge2(1, 2);
+    Graph.AddEdge2(2, 3);
+    Graph.AddEdge2(3, 4);
+    Graph.AddEdge2(2, 4);
+    Graph.AddEdge2(4, 5);
+    Graph.AddEdge2(5, 6);
+    Graph.AddEdge2(6, 7);
+    Graph.AddEdge2(7, 8);
+    Graph.AddEdge2(8, 9);
+    Graph.AddEdge2(5, 8);
+    
+    CHL chl(&Graph,&Label);
+    chl.ConstructIndex();
+    cout<<chl.Query(1, 8)<<endl;
+    
+   
     return 0;
 }
 
@@ -151,7 +169,7 @@ void CFLSubgraphMatch(const SubgraphMatch_Graph& data_graph,SubgraphMatch_Graph&
     double query_time_ns=std::chrono::duration_cast<std::chrono::nanoseconds>(end-start).count();
     result[3]=query_time_ns;
     result[4]=call_count;
-    result[5]=embedding_count;
+    result[5]=matchtable.GetCurAllocateSize();
     result[7]=queryplan_time_ns+query_time_ns;
     
     delete[] candidate;
@@ -281,7 +299,7 @@ void CFLDPSubgraphMatch(const SubgraphMatch_Graph& data_graph,SubgraphMatch_Grap
     double query_time_ns=std::chrono::duration_cast<std::chrono::nanoseconds>(end-start).count();
     result[3]=query_time_ns;
     result[4]=call_count;
-    result[5]=embedding_count;
+    result[5]=matchtable.GetCurAllocateSize();
     result[7]=queryplan_time_ns+query_time_ns;
     
     delete[] candidate;
@@ -348,7 +366,7 @@ void CRDPSubgraphMatch(const SubgraphMatch_Graph& data_graph,SubgraphMatch_Graph
     double query_time_ns=std::chrono::duration_cast<std::chrono::nanoseconds>(end-start).count();
     result[3]=query_time_ns;
     result[4]=call_count;
-    result[5]=embedding_count;
+    result[5]=matchtable.GetCurAllocateSize();
     result[7]=queryplan_time_ns+query_time_ns;
     
     delete[] candidate;
