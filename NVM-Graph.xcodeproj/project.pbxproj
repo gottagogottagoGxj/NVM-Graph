@@ -25,7 +25,6 @@
 /* Begin PBXFileReference section */
 		1D2DD20E260CB05500AF31DD /* CHL_UNWeight.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CHL_UNWeight.h; sourceTree = "<group>"; };
 		1D336F0225F4BAFF00DEA8D3 /* Property_Graph.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Property_Graph.h; sourceTree = "<group>"; };
-		1D336F0825F5F4E200DEA8D3 /* Dijkstra.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Dijkstra.h; sourceTree = "<group>"; };
 		1D53457726131C0900696979 /* UNDirect_Weight_Graph.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = UNDirect_Weight_Graph.h; sourceTree = "<group>"; };
 		1D53457926134C4C00696979 /* UNDirect_UNWeight_Graph.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = UNDirect_UNWeight_Graph.h; sourceTree = "<group>"; };
 		1D53457B26140A6500696979 /* CHL_Weight.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CHL_Weight.h; sourceTree = "<group>"; };
@@ -33,7 +32,6 @@
 		1D763B2025FB442200F964C9 /* Hub_Label.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Hub_Label.h; sourceTree = "<group>"; };
 		1D78498E259333E80068AE37 /* NVMSkiplist.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = NVMSkiplist.h; sourceTree = "<group>"; };
 		1D8262B72563DB1300F7953C /* Arena.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Arena.h; sourceTree = "<group>"; };
-		1D83390025F350DB00E94941 /* BFS.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = BFS.h; sourceTree = "<group>"; };
 		1D86CD51254058C700E3ADC7 /* NVM-Graph */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = "NVM-Graph"; sourceTree = BUILT_PRODUCTS_DIR; };
 		1D86CD54254058C700E3ADC7 /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
 		1D8BB76425A4092A00754408 /* network.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = network.h; sourceTree = "<group>"; };
@@ -89,9 +87,7 @@
 				1DB615E92566AA0C00FB679E /* InOut.h */,
 				1DDD74A1259B10E400EC8EFA /* Attr.h */,
 				1D8BB76425A4092A00754408 /* network.h */,
-				1D83390025F350DB00E94941 /* BFS.h */,
 				1D336F0225F4BAFF00DEA8D3 /* Property_Graph.h */,
-				1D336F0825F5F4E200DEA8D3 /* Dijkstra.h */,
 				1D2DD20E260CB05500AF31DD /* CHL_UNWeight.h */,
 				1D53457726131C0900696979 /* UNDirect_Weight_Graph.h */,
 				1D53457926134C4C00696979 /* UNDirect_UNWeight_Graph.h */,

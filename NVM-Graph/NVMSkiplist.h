@@ -10,6 +10,7 @@
 #include<assert.h>
 #include"Arena.h"
 
+//跳表目前利用Arena进行空间分配，没有空闲链表，有问题，需要重写
 
 class Random {
  private:

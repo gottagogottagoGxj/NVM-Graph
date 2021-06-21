@@ -12,6 +12,9 @@
 #define FALLTHROUGH_INTENDED do { } while (0)
 #endif
 
+
+//布谷鸟哈希，模版
+
 typedef unsigned int uint;
 template<class Key,class Dat>
 class HashKeyDat{

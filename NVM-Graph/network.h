@@ -9,6 +9,7 @@
 #define network_h
 #include"Attr.h"
 #include"hashtable.h"
+//网络，有向图、多重图、顶点、边都有属性
 class Net{
 public:
     class Node{

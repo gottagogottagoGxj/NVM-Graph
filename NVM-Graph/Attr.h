@@ -12,6 +12,8 @@
 #include"hash.h"
 #include"NVMSkiplist.h"
 #include"InOut.h"
+
+// 目前属性分配也是利用Arena，没有空闲空间管理
 class Attr{
 private:
     HashTable<const char*,int> AttrNameToId;

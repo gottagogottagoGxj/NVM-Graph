@@ -15,7 +15,7 @@ typedef unsigned int uint;
 const int NodeDatalengthDef=1;//默认节点标签最大长度是31个字节，最后一子节存'\0'
 const int EdgeDataLengthDef=32;//默认边标签最大长度
 const int InOutEidNumDef=10;//默认边数
-const size_t InOutEdgeNumDef=10;
+const size_t InOutEdgeNumDef=10;//默认边数
 
 class Arena{
 public:
@@ -161,5 +161,183 @@ int SearchBinRight(const int Arr[],int Start,int End,const int& key,const Compar
     }
     return Start;
 }
+/*
+ // NVMArena NVM中空间分配
+ #include<libpmemobj.h>
+ #ifndef Arena_h
+ #define Arena_h
+
+
+
+ class Arena {
+ public:
+     Arena() :begin_ptr(nullptr), curAlloc_ptr(nullptr), EveryNodeSize(0) {}
+     Arena(const uint NodeSize);
+     Arena(const uint NodeSize, const size_t MaxSize);
+     Arena(const Arena& arena);
+     virtual ~Arena();
+     Arena& operator=(const Arena& arena);
+
+     virtual char* AllocateBytes(size_t bytes);
+     virtual char* AllocateNode();
+     virtual void RecoverNode();
+     virtual const char* BeginPtr() const { return begin_ptr; }
+     virtual char* HeadPtr()const { return begin_ptr; }
+     virtual const char* EndPtr()const { return curAlloc_ptr; }
+     virtual const uint NodeSize()const { return EveryNodeSize; }
+     virtual size_t GetCurAllocateSize()const { return curAlloc_ptr - begin_ptr; }
+     virtual size_t GetCurAllocateNodeNum()const { return (curAlloc_ptr - begin_ptr) / (1LL * EveryNodeSize); }
+     virtual void Recover(){curAlloc_ptr=begin_ptr;}
+
+ private:
+     char* begin_ptr;
+     char* curAlloc_ptr;
+     uint EveryNodeSize;
+
+ };
+ Arena::Arena(const uint NodeSize) : EveryNodeSize(NodeSize) {
+     begin_ptr = static_cast<char*>(malloc(1024));
+     curAlloc_ptr = begin_ptr;
+ }
+ Arena::Arena(const uint NodeSize, const size_t MaxSize) : EveryNodeSize(NodeSize) {
+     begin_ptr = static_cast<char*>(malloc(MaxSize));
+     curAlloc_ptr = begin_ptr;
+ }
+ Arena::Arena(const Arena& arena) : EveryNodeSize(arena.EveryNodeSize) {
+     begin_ptr = static_cast<char*>(malloc(1024));
+     size_t length = arena.curAlloc_ptr - arena.begin_ptr;
+     curAlloc_ptr = begin_ptr + length;
+     memcpy(begin_ptr, arena.begin_ptr, length + 1);
+ }
+ Arena::~Arena() {
+     free(begin_ptr);
+ }
+
+ Arena& Arena:: operator=(const Arena& arena) {
+     EveryNodeSize = arena.EveryNodeSize;
+     begin_ptr = static_cast<char*>(malloc(1024));
+     size_t length = arena.curAlloc_ptr - arena.begin_ptr;
+     curAlloc_ptr = begin_ptr + length;
+     memcpy(begin_ptr, arena.begin_ptr, length + 1);
+     return *this;
+ }
+
+ inline char* Arena::AllocateNode() {
+     char* old_ptr = curAlloc_ptr;
+     curAlloc_ptr += EveryNodeSize;
+     return old_ptr;
+ }
+ inline char* Arena::AllocateBytes(size_t bytes) {
+     char* old_ptr = curAlloc_ptr;
+     curAlloc_ptr += bytes;
+     return old_ptr;
+ }
+
+ inline void Arena::RecoverNode() {
+     if (curAlloc_ptr > begin_ptr) curAlloc_ptr -= EveryNodeSize;
+ }
+
+ POBJ_LAYOUT_BEGIN(store);
+ POBJ_LAYOUT_ROOT(store, struct table);
+ POBJ_LAYOUT_TOID(store, char);
+ POBJ_LAYOUT_END(store);
+
+ struct table {
+     TOID(char) Begin;
+     size_t CurSize;
+     size_t MaxSize;
+ };
+
+ class NvmArena :public Arena {
+ private:
+     char* begin_ptr;
+     char* curAlloc_ptr;
+     uint EveryNodeSize;
+
+     PMEMobjpool* pool;
+     TOID(struct table) root;
+ public:
+     NvmArena(const uint NodeSize, const char* path, const size_t Max = 1024) :EveryNodeSize(NodeSize) {
+         pool = pmemobj_create(path, POBJ_LAYOUT_NAME(store), PMEMOBJ_MIN_POOL *32 , 0666);
+         if (pool == NULL) {
+             pool = pmemobj_open(path, POBJ_LAYOUT_NAME(store));
+             if (pool == NULL) { perror("pool is NUll"); }
+             root = POBJ_ROOT(pool, struct table);
+             begin_ptr = (char*)pmemobj_direct(D_RW(root)->Begin.oid);
+             curAlloc_ptr = begin_ptr + D_RO(root)->CurSize;
+         }
+         else {
+             root = POBJ_ROOT(pool, struct table);
+             D_RW(root)->CurSize = 0;
+             D_RW(root)->MaxSize = Max * EveryNodeSize;
+             TOID(char) begin = OID_NULL;
+             POBJ_ALLOC(pool, &begin, char, Max * EveryNodeSize, NULL, NULL);
+             D_RW(root)->Begin = begin;
+             begin_ptr = (char*)pmemobj_direct(D_RW(root)->Begin.oid);
+             curAlloc_ptr = begin_ptr;
+         }
+     }
+     virtual ~NvmArena() {
+         if (pool != NULL) {
+             pmemobj_close(pool);
+         }
+     }
+     void Resize(const size_t MaxSize);
+     virtual char* AllocateBytes(size_t bytes);
+     virtual char* AllocateNode();
+     virtual void RecoverNode();
+     virtual const char* BeginPtr() const { return begin_ptr; }
+     virtual char* HeadPtr()const { return begin_ptr; }
+     virtual const char* EndPtr()const { return curAlloc_ptr; }
+     virtual const uint NodeSize()const { return EveryNodeSize; }
+     virtual size_t GetCurAllocateSize()const { return D_RO(root)->CurSize; }
+     virtual size_t GetCurAllocateNodeNum()const { return D_RO(root)->CurSize / (1LL * EveryNodeSize); }
+     virtual void Recover();
+
+ };
+
+ inline void NvmArena::Resize(const size_t MaxSize) {
+     TOID(char) begin = OID_NULL;
+     POBJ_ALLOC(pool, &begin, char, MaxSize, NULL, NULL);
+     pmemobj_memcpy_persist(pool, pmemobj_direct(begin.oid), pmemobj_direct(D_RO(root)->Begin.oid), D_RO(root)->CurSize);
+     TOID(char) old = D_RW(root)->Begin;
+     D_RW(root)->Begin = begin;
+     D_RW(root)->MaxSize = MaxSize;
+     begin_ptr = (char*)pmemobj_direct(begin.oid);
+     curAlloc_ptr = begin_ptr + D_RO(root)->CurSize;
+     POBJ_FREE(&old);
+ }
+
+ inline char* NvmArena::AllocateBytes(size_t bytes) {
+     if (D_RO(root)->CurSize + bytes > D_RO(root)->MaxSize) {
+         Resize(D_RO(root)->MaxSize * 2);
+     }
+     char* old_ptr = curAlloc_ptr;
+     curAlloc_ptr += bytes;
+     D_RW(root)->CurSize = D_RO(root)->CurSize + bytes;
+     //pmemobj_persist(pool, old_ptr, bytes);
+     return old_ptr;
+ }
+ inline char* NvmArena::AllocateNode() {
+     if (D_RO(root)->CurSize + EveryNodeSize > D_RO(root)->MaxSize) { Resize(D_RO(root)->MaxSize * 2); }
+     char* old_ptr = curAlloc_ptr;
+     D_RW(root)->CurSize = D_RO(root)->CurSize + EveryNodeSize;
+     curAlloc_ptr += EveryNodeSize;
+     pmemobj_persist(pool, old_ptr, EveryNodeSize);
+     return old_ptr;
+ }
+ inline void NvmArena::RecoverNode() {
+     if (curAlloc_ptr > begin_ptr) curAlloc_ptr -= EveryNodeSize;
+     D_RW(root)->CurSize = D_RO(root)->CurSize - EveryNodeSize;
+ }
+ inline void NvmArena::Recover(){
+     curAlloc_ptr=begin_ptr;
+     D_RW(root)->CurSize =0;
+ }
+
+ #endif
+ */
+
+
 
 #endif /* Arena_h */
